@@ -7,13 +7,13 @@ st.set_page_config(
     page_title="台股專用 RSI 智慧查詢與診斷工具", page_icon="📈", layout="centered"
 )
 
-# 注入專業級 UI 樣式（美化卡片、調整適當字體、優化手機排版）
+# 注入專業級 UI 樣式（美化卡片、適當字體大小、優化手機排版）
 st.markdown(
     """
     <style>
     /* 整體主標題與段落微調 */
     h1 {
-        font-size: 26px !important;
+        font-size: 24px !important;
         font-weight: 700 !important;
         color: #1E293B;
     }
@@ -40,16 +40,6 @@ st.markdown(
         background-color: #1D4ED8 !important;
     }
 
-    /* 資訊卡片區塊美化 */
-    .metric-card {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        padding: 15px;
-        border-radius: 10px;
-        text-align: center;
-        margin-bottom: 10px;
-    }
-
     /* 手機版 RWD 微調 */
     @media (max-width: 640px) {
         .stButton > button {
@@ -61,12 +51,18 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 網頁標題區
+# 網頁標題與開發者署名
 st.title("📈 台股 RSI 智慧診斷工具")
 st.markdown(
-    "<p style='color: #64748B; font-size: 14px;'>本工具專為台灣股市設計。請輸入台股代號（例如：2330、3605），系統將自動計算 5T 與 10T RSI 並提供專業操作建議。</p>",
+    "<p style='color: #64748B; font-size: 13px; margin-bottom: 0px;'>本工具專為台灣股市設計。請輸入台股代號（例如：2330、3605），系統將自動計算 5T 與 10T RSI 並提供專業操作建議。</p>",
     unsafe_allow_html=True,
 )
+st.markdown(
+    "<p style='color: #2563EB; font-size: 12px; font-weight: 600;'>👨‍💻 開發者：尼克范 V.1.020</p>",
+    unsafe_allow_html=True,
+)
+
+st.markdown("---")
 
 # 搜尋列排版
 col_input, col_btn = st.columns([3, 1])
@@ -192,7 +188,6 @@ if submit_btn and stock_input:
             symbol_icon = "⚖️"
             advice = "目前數值顯示多空力道均衡，建議觀望，等待方向明確再行操作。"
 
-          # 採用簡潔美觀的資訊條列
           st.markdown(f"**目前狀態：** {status_title} {symbol_icon}")
           st.markdown(f"**操作推薦指數：** {stars}")
           st.info(f"**買賣策略建議：**\n\n{advice}")
