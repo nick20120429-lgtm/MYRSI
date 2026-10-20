@@ -84,8 +84,27 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 網頁標題
+# 取得台灣當前時間
+tz_taiwan = pytz.timezone("Asia/Taipei")
+now_taiwan = datetime.now(tz_taiwan)
+current_date_str = now_taiwan.strftime("%Y/%m/%d")
+current_time_str = now_taiwan.strftime("%H:%M")
+
+# 網頁標題與開發者署名
 st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
+st.markdown(
+    f"<p style='color: #64748B; font-size: 12px; margin-top: 4px;"
+    f" margin-bottom: 12px;'>📅 <b>日期：</b>{current_date_str} 🕒"
+    f" <b>時間：</b>{current_time_str} | <span style='color: #2563EB;"
+    " font-weight: 600;'>👨‍💻 尼克范 V.1.0.2.0</span></p>",
+    unsafe_allow_html=True,
+)
+
+# 🚀 犀利媽主頁固定口訣醒目看板
+st.info(
+    "💡 **犀利媽實戰口訣：**\n\n> *「5T 過熱先入袋，10T 守住多頭在；超跌見紅不急追，低接耐心等待來。」*"
+)
+
 st.write(
     "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 5347），"
     "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
@@ -244,6 +263,4 @@ with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明")
       "    * **RSI > 50**：代表買方力道較強（多方市場）。\n"
       "    * **RSI < 50**：代表賣方力道較強（空方市場）。\n"
       "* **超買與超賣區間**：\n"
-      "    * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。\n"
-      "    * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。"
-  )
+      "    * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險
