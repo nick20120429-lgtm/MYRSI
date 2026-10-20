@@ -23,8 +23,10 @@ st.markdown(
         color: #1E293B;
         margin-bottom: 0px !important;
     }
-    .stSelectbox div[data-baseweb="select"] {
-        min-height: 40px !important;
+    .stTextInput input {
+        font-size: 16px !important;
+        height: 40px !important;
+        border-radius: 6px !important;
     }
     .stButton > button {
         height: 40px !important;
@@ -84,41 +86,34 @@ st.info(
 
 st.markdown("---")
 
-# 自選快速切換清單與手動空白設定
-favorite_stocks = {
-    "請選擇欲查詢的股票...": "",
-    "3605 宏致": "3605",
-    "2377 微星": "2377",
-    "2330 台積電": "2330",
-    "2317 鴻海": "2317",
-    "2603 長榮": "2603",
-    "2454 聯發科": "2454",
-}
+# 使用欄位排版讓輸入框跟按鈕並排（預設保持空白）
+col_input, col_btn = st.columns([3, 1])
 
-col_sel, col_btn = st.columns([3, 1])
-
-with col_sel:
-  selected_fav = st.selectbox(
-      "選擇關注的股票",
-      list(favorite_stocks.keys()),
-      index=None,
-      placeholder="請選擇或點擊股票...",
+with col_input:
+  stock_input = st.text_input(
+      "請輸入台股代號（例如 2330、3605）：",
+      value="",
+      placeholder="請輸入台股代號...",
       label_visibility="collapsed",
   )
 
 with col_btn:
-  submit_btn = st.button("查詢")
+  submit_btn = st.button("確定查詢", type="primary")
 
-# 只有當使用者從選單選擇股票，或點擊查詢時才執行
-if selected_fav and favorite_stocks[selected_fav]:
-  stock_digits = favorite_stocks[selected_fav]
+if submit_btn and stock_input:
+  raw_input = stock_input.strip()
+  stock_digits = "".join(filter(str.isdigit, raw_input))
 
-  if submit_btn or selected_fav:
+  if not stock_digits:
+    st.error("請輸入正確的台股數字代號（例如：2330、3605）！")
+  else:
     symbols_to_try = [f"{stock_digits}.TW", f"{stock_digits}.TWO"]
     df = pd.DataFrame()
     used_symbol = ""
 
-    with st.spinner("正在載入行情與計算 RSI..."):
+    with st.spinner(
+        f"正在鎖定台股代號 {stock_digits} 抓取歷史數據並精準計算 RSI..."
+    ):
       try:
         for sym in symbols_to_try:
           temp_df = yf.download(sym, period="6mo", interval="1d", progress=False)
@@ -129,7 +124,7 @@ if selected_fav and favorite_stocks[selected_fav]:
 
         if df.empty:
           st.error(
-              f"找不到代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
+              f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
           )
         else:
           if isinstance(df.columns, pd.MultiIndex):
@@ -160,13 +155,8 @@ if selected_fav and favorite_stocks[selected_fav]:
           latest_rsi_5 = float(df["RSI_5"].iloc[-1])
           latest_rsi_10 = float(df["RSI_10"].iloc[-1])
 
-          last_date_str = str(df.index[-1].strftime("%Y-%m-%d"))
-
-          st.markdown(
-              f"**【{used_symbol}】 最新收盤價：{latest_close:.2f} 元**"
-              f" <span style='color: #64748B; font-size:"
-              f" 12px;'>({last_date_str})</span>",
-              unsafe_allow_html=True,
+          st.success(
+              f"成功取得台股【{used_symbol}】最新收盤價：{latest_close:.2f} 元"
           )
 
           col1, col2 = st.columns(2)
@@ -175,16 +165,16 @@ if selected_fav and favorite_stocks[selected_fav]:
           with col2:
             st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
 
-          # 智慧診斷與買賣策略
+          # 結合圖片邏輯與多空判定的智慧診斷
           st.markdown("---")
-          st.markdown(
-              "**🤖 犀利媽實戰診斷與操作建議**", unsafe_allow_html=True
-          )
+          st.subheader("🤖 系統智慧診斷與買賣策略建議")
 
+          # 判定邏輯
           history_tip = ""
           if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
-            status_title = "🔴 **極度過熱 / 高檔警戒區** 🚨"
+            status_title = "🔴 **極度過熱 / 高檔警戒區**"
             stars = "⭐"
+            symbol_icon = "🚨"
             advice = (
                 "5T 或 10T 來到 90 以上極高檔！符合「連續多日高檔、準備賣出」"
                 "的訊號特徵。短線過熱，強烈建議分批獲利了結、入袋為安！"
@@ -194,8 +184,9 @@ if selected_fav and favorite_stocks[selected_fav]:
                 " 以上時，追價意願易竭盡，通常 1-3 天內容易出現明顯回檔整理。"
             )
           elif latest_rsi_5 > 70:
-            status_title = "🟠 **短線過熱（超買區）** 🔥"
+            status_title = "🟠 **短線過熱（超買區）**"
             stars = "⭐⭐"
+            symbol_icon = "🔥"
             advice = (
                 "短線漲幅過快，買氣過熱。若有持股可考慮適度調節，切勿盲目追高。"
             )
@@ -204,8 +195,9 @@ if selected_fav and favorite_stocks[selected_fav]:
                 " 以上超買區時切忌急躁追高，多看少做或分批減碼為宜。"
             )
           elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
-            status_title = "🔴 **短線超賣 / 弱勢** 🤒"
+            status_title = "🔴 **短線超賣 / 弱勢**"
             stars = "⭐⭐"
+            symbol_icon = "🤒"
             advice = (
                 "短線跌幅較重進入超賣區。若中期指標（10T）也跟著崩跌，需注意停損；"
                 "若 10T 仍有守，可觀察是否有打底機會。"
@@ -216,8 +208,9 @@ if selected_fav and favorite_stocks[selected_fav]:
                 " 是否能發揮防守支撐。"
             )
           elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
-            status_title = "🟡 **高檔技術性回檔 / 整理中** 🛡️"
+            status_title = "🟡 **高檔技術性回檔 / 整理中**"
             stars = "⭐⭐⭐"
+            symbol_icon = "🛡️"
             advice = (
                 "短線買氣稍微降溫（5T < 50），但中期多頭防線（10T >= 50）仍穩固。"
                 "**建議：持股續抱，耐心等待短線止穩。**"
@@ -227,8 +220,9 @@ if selected_fav and favorite_stocks[selected_fav]:
                 " 以上代表中多格局未破，短線拉回屬於技術性洗盤，不用過度恐慌。"
             )
           elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
-            status_title = "🟢 **短線轉強 / 多頭買入訊號** 🚀"
+            status_title = "🟢 **短線轉強 / 多頭買入訊號**"
             stars = "⭐⭐⭐⭐⭐"
+            symbol_icon = "🚀"
             advice = (
                 "短天期動能大於中天期，且雙雙站在 50"
                 " 中軸之上，短線買氣回溫，多方佔優勢！"
@@ -239,8 +233,9 @@ if selected_fav and favorite_stocks[selected_fav]:
                 " 之上且短天期向上翻揚，為標準的多頭攻擊盤，可順勢關注。"
             )
           else:
-            status_title = "⚪ **多空拉鋸 / 盤整格局** ⚖️"
+            status_title = "⚪ **多空拉鋸 / 盤整格局**"
             stars = "⭐⭐⭐"
+            symbol_icon = "⚖️"
             advice = (
                 "目前數值顯示多空力道均衡，建議觀望，等待方向明確再行操作。"
             )
@@ -248,13 +243,13 @@ if selected_fav and favorite_stocks[selected_fav]:
                 "💡 **犀利媽經驗談：** 盤整盤多看少做，等待突破訊號再出手勝率更高。"
             )
 
-          st.markdown(f"**目前狀態：** {status_title}")
+          st.markdown(f"**目前狀態：** {status_title} {symbol_icon}")
           st.markdown(f"**操作推薦指數：** {stars}")
           st.info(f"**買賣策略建議：**\n\n{advice}\n\n{history_tip}")
 
           # 顯示近期走勢圖表
           st.markdown("---")
-          st.markdown("**📊 近期 RSI 走勢圖**", unsafe_allow_html=True)
+          st.subheader("📊 近期 RSI 走勢圖")
           rsi_chart_df = pd.DataFrame(
               {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
           ).tail(30)
