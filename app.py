@@ -182,4 +182,76 @@ if submit_btn or selected_fav:
 
         price_diff = latest_high - latest_low
         price_diff_pct = (
-            (price_diff / latest_low) * 100 if
+            (price_diff / latest_low) * 100 if latest_low > 0 else 0
+        )
+        last_date_str = str(df.index[-1].strftime("%Y-%m-%d"))
+
+        market_closed = (
+            now_taiwan.hour > 13
+            or (now_taiwan.hour == 13 and now_taiwan.minute >= 30)
+        )
+
+        st.markdown(
+            f"**【{used_symbol}】 即時行情與報價** <span style='color:"
+            f" #64748B; font-size: 12px;'>({last_date_str})</span>",
+            unsafe_allow_html=True,
+        )
+
+        if market_closed:
+          c_p1, c_p2, c_p3, c_p4 = st.columns(4)
+          with c_p1:
+            st.metric(label="本日開盤", value=f"{latest_open:.2f}")
+          with c_p2:
+            st.metric(label="最高價", value=f"{latest_high:.2f}")
+          with c_p3:
+            st.metric(label="最低價", value=f"{latest_low:.2f}")
+          with c_p4:
+            st.metric(label="收盤價", value=f"{latest_close:.2f}")
+        else:
+          c_p1, c_p2, c_p3, c_p4 = st.columns(4)
+          with c_p1:
+            st.metric(label="本日開盤", value=f"{latest_open:.2f}")
+          with c_p2:
+            st.metric(label="盤中最高", value=f"{latest_high:.2f}")
+          with c_p3:
+            st.metric(label="盤中最低", value=f"{latest_low:.2f}")
+          with c_p4:
+            st.metric(
+                label="即時價格", value=f"{latest_close:.2f}", delta="交易中"
+            )
+
+        c_d1, c_d2 = st.columns(2)
+        with c_d1:
+          st.metric(label="↕️ 本日高低差 (高-低)", value=f"{price_diff:.2f} 元")
+        with c_d2:
+          st.metric(label="📊 本日振幅比例", value=f"{price_diff_pct:.2f}%")
+
+        col_r1, col_r2 = st.columns(2)
+        with col_r1:
+          st.metric(label="5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
+        with col_r2:
+          st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
+
+        st.markdown("---")
+        st.markdown("**🤖 犀利媽實戰診斷與操作建議**", unsafe_allow_html=True)
+
+        history_tip = ""
+        if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
+          status_title = "🔴 極度過熱 / 高檔警戒區"
+          stars = "⭐"
+          advice = (
+              "5T 或 10T 來到 90 以上極高檔！符合「連續多日高檔、準備賣出」"
+              "的訊號特徵。短線過熱，強烈建議分批獲利了結、入袋為安！"
+          )
+          history_tip = (
+              "💡 **犀利媽經驗談：** 歷史統計顯示，短線衝高至 90"
+              " 以上時，追價意願易竭盡，通常 1-3 天內容易出現明顯回檔整理。"
+          )
+        elif latest_rsi_5 > 70:
+          status_title = "🟠 短線過熱（超買區）"
+          stars = "⭐⭐"
+          advice = (
+              "短線漲幅過快，買氣過熱。若有持股可考慮適度調節，切勿盲目追高。"
+          )
+          history_tip = (
+              "💡 **犀利媽經驗談：** 5T
