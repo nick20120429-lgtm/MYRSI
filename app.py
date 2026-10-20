@@ -6,7 +6,7 @@ import yfinance as yf
 
 # 設定網頁標題與 RWD 寬螢幕自適應
 st.set_page_config(
-    page_title="台股智慧診斷工具", page_icon="📈", layout="centered"
+    page_title=" 智慧診斷工具", page_icon="📈", layout="centered"
 )
 
 # 注入自訂樣式：輸入框與查詢按鈕高度同為 40px 等高對齊
