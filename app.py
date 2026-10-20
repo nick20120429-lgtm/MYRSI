@@ -1,48 +1,25 @@
-from datetime import datetime
-import pytz
 import pandas as pd
 import streamlit as st
 import yfinance as yf
 
-# 設定網頁標題
-st.set_page_config(
-    page_title="台股 RSI 智慧診斷工具", page_icon="📈", layout="centered"
-)
-
-# 取得台灣當前時間
-tz_taiwan = pytz.timezone("Asia/Taipei")
-now_taiwan = datetime.now(tz_taiwan)
-current_date_str = now_taiwan.strftime("%Y/%m/%d")
-current_time_str = now_taiwan.strftime("%H:%M")
-
-# 網頁頂部標題
-st.markdown(
-    "<div style='text-align: center; margin-bottom: 15px;'>"
-    "<h2 style='font-weight: 700; color: #202124; margin-bottom: 5px;'>📈"
-    " 台股 RSI 智慧診斷工具</h2>"
-    f"<p style='color: #70757a; font-size: 12px;'>📅 <b>日期：</b>{current_date_str}"
-    f" 🕒 <b>時間：</b>{current_time_str} | <span style='color: #4285F4;"
-    " font-weight: 600;'>👨‍💻 尼克范 V.1.0.2.0</span></p>"
-    "</div>",
-    unsafe_allow_html=True,
-)
-
-# 實戰口訣看板
-st.info(
-    "💡 **實戰操作口訣：**\n\n"
-    "* 🚀 **站上 5T（強勢）**：極強勢攻擊 ➔ 短線買進 / 多單續抱\n"
-    "* ⚠️ **跌破 5T（轉弱）**：攻勢受阻、轉弱警訊 ➔ 減碼停利 / 試探性建倉\n"
-    "* 🛑 **跌破 10T（破防）**：趨勢轉空、防線失守 ➔ 全數停損離場 / 加碼放空"
-)
-
+# 網頁標題
+st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
 st.write(
-    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605），"
-    "點擊確定後將自動計算 5T 與 10T RSI、極高低價並對照口訣提供操作建議。"
+    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 5347），"
+    "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
 )
 
-# 輸入與按鈕
-stock_input = st.text_input("請輸入台股代號（例如 2330）：", value="2330")
-submit_btn = st.button("確定查詢", type="primary")
+# 使用欄位排版讓輸入框跟按鈕並排
+col_input, col_btn = st.columns([3, 1])
+
+with col_input:
+  stock_input = st.text_input(
+      "請輸入台股代號（例如 2330）：", value="2330", label_visibility="collapsed"
+  )
+
+with col_btn:
+  st.write("")
+  submit_btn = st.button("確定查詢", type="primary")
 
 if submit_btn and stock_input:
   raw_input = stock_input.strip()
@@ -55,52 +32,26 @@ if submit_btn and stock_input:
     df = pd.DataFrame()
     used_symbol = ""
 
-    try:
-      with st.spinner("正在抓取歷史數據並計算中..."):
+    with st.spinner(
+        f"正在鎖定台股代號 {stock_digits} 抓取歷史數據並精準計算 RSI..."
+    ):
+      try:
         for sym in symbols_to_try:
-          temp_df = yf.download(sym, period="1y", interval="1d", progress=False)
-          if not temp_df.empty and len(temp_df) > 10:
+          temp_df = yf.download(sym, period="6mo", interval="1d", progress=False)
+          if not temp_df.empty:
             df = temp_df
             used_symbol = sym
             break
 
         if df.empty:
           st.error(
-              f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確。"
+              f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
           )
         else:
           if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-
-          close_prices = df["Close"]
-          high_prices = df["High"]
-          low_prices = df["Low"]
-
-          # 計算本日、本月、本年最高/最低價
-          latest_date = df.index[-1]
-          current_year = latest_date.year
-          current_month = latest_date.month
-
-          day_high = float(high_prices.iloc[-1])
-          day_low = float(low_prices.iloc[-1])
-
-          month_mask = (df.index.year == current_year) & (
-              df.index.month == current_month
-          )
-          month_df = df[month_mask]
-          month_high = (
-              float(month_df["High"].max()) if not month_df.empty else day_high
-          )
-          month_low = (
-              float(month_df["Low"].min()) if not month_df.empty else day_low
-          )
-
-          year_mask = df.index.year == current_year
-          year_df = df[year_mask]
-          year_high = (
-              float(year_df["High"].max()) if not year_df.empty else day_high
-          )
-          year_low = float(year_df["Low"].min()) if not year_df.empty else day_low
+            close_prices = df[("Close", used_symbol)]
+          else:
+            close_prices = df["Close"]
 
 
           def calculate_rsi(data, window=14):
@@ -125,42 +76,88 @@ if submit_btn and stock_input:
           latest_rsi_5 = float(df["RSI_5"].iloc[-1])
           latest_rsi_10 = float(df["RSI_10"].iloc[-1])
 
-          st.success(f"成功取得台股【{used_symbol}】最新收盤價：{latest_close:.2f} 元")
+          st.success(
+              f"成功取得台股【{used_symbol}】最新收盤價：{latest_close:.2f} 元"
+          )
 
-          # 顯示 RSI 指標
           col1, col2 = st.columns(2)
           with col1:
             st.metric(label="5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
           with col2:
             st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
 
-          # 顯示極值
+          # 結合圖片邏輯與多空判定的智慧診斷
           st.markdown("---")
-          st.subheader("📊 價格區間極值統計")
-          st.write(
-              f"• **本日**：最高 {day_high:.2f}元 / 最低 {day_low:.2f}元"
-          )
-          st.write(
-              f"• **本月**：最高 {month_high:.2f}元 / 最低 {month_low:.2f}元"
-          )
-          st.write(
-              f"• **本年**：最高 {year_high:.2f}元 / 最低 {year_low:.2f}元"
-          )
+          st.subheader("🤖 系統智慧診斷與買賣策略建議")
 
-          # 智慧診斷
-          st.markdown("---")
-          st.subheader("🤖 系統智慧診斷與操作建議")
-
+          # 判定邏輯
           if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
-            status_title = "🔴 極度過熱 / 高檔警戒區"
-            meaning = "短線過熱，買氣來到極高檔。"
-            action = "分批獲利了結、入袋為安！"
+            status_title = "🔴 **極度過熱 / 高檔警戒區**"
+            stars = "⭐"
+            symbol_icon = "🚨"
+            advice = (
+                "5T 或 10T 來到 90 以上極高檔！符合「連續多日高檔、準備賣出」"
+                "的訊號特徵。短線過熱，強烈建議分批獲利了結、入袋為安！"
+            )
           elif latest_rsi_5 > 70:
-            status_title = "🟠 短線過熱（超買區）"
-            meaning = "短線漲幅過快，買氣過熱。"
-            action = "適度調節，切勿盲目追高。"
-          elif latest_rsi_5 < 50 and latest_rsi_10 < 50:
-            status_title = "🔴 跌破 10T（趨勢轉空）"
-            meaning = "跌破 10T ➔ 代表趨勢轉空、防線失守。"
-            action = "全數停損離場 / 加碼放空"
-          elif latest_rsi_5 < 50 and latest_rsi_10 >=
+            status_title = "🟠 **短線過熱（超買區）**"
+            stars = "⭐⭐"
+            symbol_icon = "🔥"
+            advice = "短線漲幅過快，買氣過熱。若有持股可考慮適度調節，切勿盲目追高。"
+          elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
+            status_title = "🔴 **短線超賣 / 弱勢**"
+            stars = "⭐⭐"
+            symbol_icon = "🤒"
+            advice = (
+                "短線跌幅較重進入超賣區。若中期指標（10T）也跟著崩跌，需注意停損；"
+                "若 10T 仍有守，可觀察是否有打底機會。"
+            )
+          elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
+            status_title = "🟡 **高檔技術性回檔 / 整理中**"
+            stars = "⭐⭐⭐"
+            symbol_icon = "🛡️"
+            advice = (
+                "短線買氣稍微降溫（5T < 50），但中期多頭防線（10T >= 50）仍穩固。"
+                "**建議：持股續抱，耐心等待短線止穩。**"
+            )
+          elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
+            status_title = "🟢 **短線轉強 / 多頭買入訊號**"
+            stars = "⭐⭐⭐⭐⭐"
+            symbol_icon = "🚀"
+            advice = (
+                "短天期動能大於中天期，且雙雙站在 50 中軸之上，短線買氣回溫，多方佔優勢！"
+                "**建議：可考慮進場或加碼。**"
+            )
+          else:
+            status_title = "⚪ **多空拉鋸 / 盤整格局**"
+            stars = "⭐⭐⭐"
+            symbol_icon = "⚖️"
+            advice = "目前數值顯示多空力道均衡，建議觀望，等待方向明確再行操作。"
+
+          st.markdown(f"**目前狀態：** {status_title} {symbol_icon}")
+          st.markdown(f"**操作推薦指數：** {stars}")
+          st.markdown(f"**買賣策略建議：** {advice}")
+
+          # 顯示近期走勢圖表
+          st.markdown("---")
+          st.subheader("📊 近期 RSI 走勢圖")
+          rsi_chart_df = pd.DataFrame(
+              {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
+          ).tail(30)
+          st.line_chart(rsi_chart_df)
+
+      except Exception as e:
+        st.error(f"讀取台股資料時發生錯誤：{e}")
+
+# 在頁面下方加入 RSI 核心概念備註說明區塊
+st.markdown("---")
+with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明"):
+  st.markdown("""
+    * **數值範圍**：介於 0 到 100 之間。
+    * **多空分水嶺（50）**：
+        * **RSI > 50**：代表買方力道較強（多方市場）。
+        * **RSI < 50**：代表賣方力道較強（空方市場）。
+    * **超買與超賣區間**：
+        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
+        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
+    """)
