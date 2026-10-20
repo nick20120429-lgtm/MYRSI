@@ -1,3 +1,5 @@
+from datetime import datetime
+import pytz
 import pandas as pd
 import streamlit as st
 import yfinance as yf
@@ -51,15 +53,20 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# 取得台灣當前時間
+tz_taiwan = pytz.timezone("Asia/Taipei")
+now_taiwan = datetime.now(tz_taiwan)
+current_date_str = now_taiwan.strftime("%Y/%m/%d")
+current_time_str = now_taiwan.strftime("%H:%M")
+
 # 網頁標題與開發者署名
 st.title("📈 台股 RSI 智慧診斷工具")
 st.markdown(
-    "<p style='color: #64748B; font-size: 13px; margin-bottom: 0px;'>本工具專為台灣股市設計。請輸入台股代號（例如：2330、3605），系統將自動計算 5T 與 10T RSI 並提供專業操作建議。</p>",
+    f"<p style='color: #64748B; font-size: 13px; margin-bottom: 0px;'>📅 <b>目前日期：</b>{current_date_str} 🕒 <b>時間：</b>{current_time_str} (台股時間)</p>",
     unsafe_allow_html=True,
 )
 st.markdown(
-    "<p style='color: #2563EB; font-size: 12px; font-weight: 600;'>👨‍💻 開發者：尼克范"
-    " V.1.020</p>",
+    "<p style='color: #2563EB; font-size: 12px; font-weight: 600; margin-top: 5px;'>👨‍💻 開發者：尼克范 V.1.020</p>",
     unsafe_allow_html=True,
 )
 
@@ -90,7 +97,8 @@ if submit_btn and stock_input:
     with st.spinner(f"正在擷取代號 {stock_digits} 即時數據並計算 RSI..."):
       try:
         for sym in symbols_to_try:
-          temp_df = yf.download(sym, period="6mo", interval="1d", progress=False)
+          # 抓取最近 5 天資料以取得即時價與開盤價
+          temp_df = yf.download(sym, period="5d", interval="1d", progress=False)
           if not temp_df.empty:
             df = temp_df
             used_symbol = sym
@@ -101,7 +109,7 @@ if submit_btn and stock_input:
               f"找不到代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
           )
         else:
-          # 檢查 MultiIndex 欄位結構以正確抓取價格
+          # 檢查 MultiIndex 欄位結構
           if isinstance(df.columns, pd.MultiIndex):
             close_prices = df[("Close", used_symbol)]
             open_prices = df[("Open", used_symbol)]
@@ -112,6 +120,13 @@ if submit_btn and stock_input:
             open_prices = df["Open"]
             high_prices = df["High"]
             low_prices = df["Low"]
+
+          # 另外抓取 6 個月資料來計算精準的 5T 與 10T RSI
+          df_long = yf.download(sym, period="6mo", interval="1d", progress=False)
+          if isinstance(df_long.columns, pd.MultiIndex):
+            long_close = df_long[("Close", used_symbol)]
+          else:
+            long_close = df_long["Close"]
 
 
           def calculate_rsi(data, window=14):
@@ -129,29 +144,63 @@ if submit_btn and stock_input:
             return rsi
 
 
-          df["RSI_5"] = calculate_rsi(close_prices, window=5)
-          df["RSI_10"] = calculate_rsi(close_prices, window=10)
+          rsi_5_series = calculate_rsi(long_close, window=5)
+          rsi_10_series = calculate_rsi(long_close, window=10)
 
           latest_open = float(open_prices.iloc[-1])
           latest_high = float(high_prices.iloc[-1])
           latest_low = float(low_prices.iloc[-1])
           latest_close = float(close_prices.iloc[-1])
-          latest_rsi_5 = float(df["RSI_5"].iloc[-1])
-          latest_rsi_10 = float(df["RSI_10"].iloc[-1])
+          latest_rsi_5 = float(rsi_5_series.iloc[-1])
+          latest_rsi_10 = float(rsi_10_series.iloc[-1])
 
-          # 顯示股票代號與當日開盤、收盤等行情資訊
-          st.success(f"**【{used_symbol}】 最新交易行情**")
+          # 取得最新報價資料的日期字串
+          last_date_str = str(df.index[-1].strftime("%Y-%m-%d"))
 
-          # 用四欄位整齊呈現：開盤價、最高價、最低價、最新收盤價
-          c_p1, c_p2, c_p3, c_p4 = st.columns(4)
-          with c_p1:
-            st.metric(label="開盤價", value=f"{latest_open:.2f}")
-          with c_p2:
-            st.metric(label="最高價", value=f"{latest_high:.2f}")
-          with c_p3:
-            st.metric(label="最低價", value=f"{latest_low:.2f}")
-          with c_p4:
-            st.metric(label="收盤價", value=f"{latest_close:.2f}")
+          # 判斷是否已過 13:30 收盤
+          market_closed = (
+              now_taiwan.hour > 13
+              or (now_taiwan.hour == 13 and now_taiwan.minute >= 30)
+          )
+
+          st.success(f"**【{used_symbol}】 即時行情與報價資訊**")
+
+          # 顯示交易日期
+          st.markdown(
+              f"<p style='color: #475569; font-size: 14px; margin-bottom: 5px;'>📅 交易日期：<b>{last_date_str}</b></p>",
+              unsafe_allow_html=True,
+          )
+
+          # 行情欄位呈現（未過 13:30 不顯示收盤價，顯示即時價格）
+          if market_closed:
+            c_p1, c_p2, c_p3, c_p4 = st.columns(4)
+            with c_p1:
+              st.metric(
+                  label=f"本日開盤 ({last_date_str})", value=f"{latest_open:.2f}"
+              )
+            with c_p2:
+              st.metric(label="最高價", value=f"{latest_high:.2f}")
+            with c_p3:
+              st.metric(label="最低價", value=f"{latest_low:.2f}")
+            with c_p4:
+              st.metric(label="收盤價", value=f"{latest_close:.2f}")
+          else:
+            c_p1, c_p2, c_p3, c_p4 = st.columns(4)
+            with c_p1:
+              st.metric(
+                  label=f"本日開盤 ({last_date_str} 09:00)",
+                  value=f"{latest_open:.2f}",
+              )
+            with c_p2:
+              st.metric(label="盤中最高", value=f"{latest_high:.2f}")
+            with c_p3:
+              st.metric(label="盤中最低", value=f"{latest_low:.2f}")
+            with c_p4:
+              st.metric(
+                  label="即時價格 (盤中)",
+                  value=f"{latest_close:.2f}",
+                  delta="交易中",
+              )
 
           # RSI 數據呈現
           col_r1, col_r2 = st.columns(2)
@@ -216,7 +265,7 @@ if submit_btn and stock_input:
           st.markdown("---")
           st.subheader("📊 近期 RSI 走勢圖")
           rsi_chart_df = pd.DataFrame(
-              {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
+              {"RSI_5": rsi_5_series, "RSI_10": rsi_10_series}
           ).tail(30)
           st.line_chart(rsi_chart_df)
 
