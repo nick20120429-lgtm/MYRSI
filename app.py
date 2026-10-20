@@ -262,8 +262,6 @@ if selected_fav and favorite_stocks[selected_fav]:
 
       except Exception as e:
         st.error(f"讀取台股資料時發生錯誤：{e}")
-else:
-  st.info("👆 請從上方下拉選單選擇您想查詢的股票，即可開始檢視 RSI 診斷。")
 
 # 在頁面下方加入 RSI 核心概念備註說明區塊
 st.markdown("---")
