@@ -9,6 +9,37 @@ st.set_page_config(
     page_title="台股 RSI 智慧診斷工具", page_icon="📈", layout="centered"
 )
 
+# 注入自訂樣式：讓輸入框與查詢按鈕高度同為 40px 等高對齊
+st.markdown(
+    """
+    <style>
+    /* 輸入框高度設定為 40px */
+    .stTextInput input {
+        font-size: 16px !important;
+        height: 40px !important;
+        border-radius: 6px !important;
+        border: 1px solid #CBD5E1 !important;
+    }
+    
+    /* 查詢按鈕高度同步設定為 40px，達成等高對齊 */
+    .stButton > button {
+        height: 40px !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        width: 100%;
+        border-radius: 6px !important;
+        background-color: #2563EB !important;
+        color: white !important;
+        border: none !important;
+    }
+    .stButton > button:hover {
+        background-color: #1D4ED8 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # 取得台灣當前時間
 tz_taiwan = pytz.timezone("Asia/Taipei")
 now_taiwan = datetime.now(tz_taiwan)
@@ -49,7 +80,6 @@ with col_input:
   )
 
 with col_btn:
-  st.write("")
   submit_btn = st.button("確定查詢", type="primary")
 
 if submit_btn and stock_input:
@@ -113,84 +143,4 @@ if submit_btn and stock_input:
 
           col1, col2 = st.columns(2)
           with col1:
-            st.metric(label="5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
-          with col2:
-            st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
-
-          # 口訣解讀邏輯判定
-          st.markdown("---")
-          st.subheader("🤖 依口訣邏輯進行的系統智慧診斷與操作建議")
-
-          # 根據 5T 與 10T 數值對應口訣狀態
-          if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
-            status_title = "🔴 **極度過熱 / 高檔警戒區**"
-            stars = "⭐"
-            symbol_icon = "🚨"
-            advice = (
-                "5T 或 10T 來到 90 以上極高檔！符合「連續多日高檔、準備賣出」"
-                "的訊號特徵。短線過熱，強烈建議分批獲利了結、入袋為安！"
-            )
-          elif latest_rsi_5 > 70:
-            status_title = "🟠 **短線過熱（超買區）**"
-            stars = "⭐⭐"
-            symbol_icon = "🔥"
-            advice = (
-                "短線漲幅過快，買氣過熱。若有持股可考慮適度調節，切勿盲目追高。"
-            )
-          elif latest_rsi_5 < 50 and latest_rsi_10 < 50:
-            status_title = "🔴 **跌破多空防線（弱勢區）**"
-            stars = "⭐⭐"
-            symbol_icon = "⚠️"
-            advice = (
-                "5T 與 10T 雙雙跌破 50 中軸！對照口訣：「跌破 5T 攻勢受阻、轉弱」"
-                "且接近或跌破 10T 防線，趨勢轉空，應注意減碼、試探性空單或停損離場！"
-            )
-          elif latest_rsi_5 < 50 and latest_rsi_10 >= 50:
-            status_title = "🟡 **5T 回檔 / 10T 多頭防線支撐**"
-            stars = "⭐⭐⭐"
-            symbol_icon = "🛡️"
-            advice = (
-                "5T 跌破 50（短線攻勢受阻、轉弱），但 10T 仍守在 50 之上。"
-                "對照口訣屬於「轉弱警訊、減碼停利」，需觀察 10T 防線是否能持續守住。"
-            )
-          elif latest_rsi_5 >= 50 and latest_rsi_10 >= 50:
-            status_title = "🟢 **站上 5T 與 10T / 極強勢攻擊**"
-            stars = "⭐⭐⭐⭐⭐"
-            symbol_icon = "🚀"
-            advice = (
-                "5T 與 10T 雙雙站穩 50 以上，且短天期動能強勁！對照口訣：「站上 5T"
-                " 代表極強勢攻擊」，短線買進 / 多單續抱！"
-            )
-          else:
-            status_title = "⚪ **多空拉鋸 / 盤整格局**"
-            stars = "⭐⭐⭐"
-            symbol_icon = "⚖️"
-            advice = (
-                "目前數值顯示多空力道均衡，建議觀望，等待方向明確再行操作。"
-            )
-
-          st.markdown(f"**目前狀態：** {status_title} {symbol_icon}")
-          st.markdown(f"**操作推薦指數：** {stars}")
-          st.markdown(f"**買賣策略建議：** {advice}")
-
-          # 顯示近期走勢圖表
-          st.markdown("---")
-          st.subheader("📊 近期 RSI 走勢圖")
-          rsi_chart_df = pd.DataFrame(
-              {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
-          ).tail(30)
-          st.line_chart(rsi_chart_df)
-
-      except Exception as e:
-        st.error(f"讀取台股資料時發生錯誤：{e}")
-
-# 在頁面下方加入 RSI 核心概念備註說明區塊
-st.markdown("---")
-with st.expander("📖 點擊展開：RSI 的核心概念與口訣對照說明"):
-  st.markdown("""
-    * **數值範圍**：介於 0 到 100 之間，50 為多空分水嶺。
-    * **口訣對照表**：
-        * **站上 5T（RSI 5 > 50 且向上）**：極強勢攻擊 ➔ **短線買進 / 多單續抱**。
-        * **跌破 5T（RSI 5 < 50）**：攻勢受阻、轉弱警訊 ➔ **減碼停利 / 試探性建倉**。
-        * **跌破 10T（RSI 10 < 50）**：趨勢轉空、防線失守 ➔ **全數停損離場 / 加碼放空**。
-    """)
+            st.metric(label="5
