@@ -154,6 +154,12 @@ if submit_btn and stock_input:
           latest_rsi_5 = float(rsi_5_series.iloc[-1])
           latest_rsi_10 = float(rsi_10_series.iloc[-1])
 
+          # 計算本日高低差與振幅百分比
+          price_diff = latest_high - latest_low
+          price_diff_pct = (
+              (price_diff / latest_low) * 100 if latest_low > 0 else 0
+          )
+
           # 取得最新報價資料的日期字串
           last_date_str = str(df.index[-1].strftime("%Y-%m-%d"))
 
@@ -171,7 +177,7 @@ if submit_btn and stock_input:
               unsafe_allow_html=True,
           )
 
-          # 行情欄位呈現（未過 13:30 不顯示收盤價，顯示即時價格）
+          # 第一排：開盤、最高、最低、收盤 (或盤中即時價)
           if market_closed:
             c_p1, c_p2, c_p3, c_p4 = st.columns(4)
             with c_p1:
@@ -201,6 +207,18 @@ if submit_btn and stock_input:
                   value=f"{latest_close:.2f}",
                   delta="交易中",
               )
+
+          # 第二排新增：本日高低差與振幅
+          c_d1, c_d2 = st.columns(2)
+          with c_d1:
+            st.metric(
+                label="↕️ 本日高低差 (高 - 低)",
+                value=f"{price_diff:.2f} 元",
+            )
+          with c_d2:
+            st.metric(
+                label="📊 本日振幅比例", value=f"{price_diff_pct:.2f}%"
+            )
 
           # RSI 數據呈現
           col_r1, col_r2 = st.columns(2)
