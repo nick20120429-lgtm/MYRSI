@@ -13,28 +13,21 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* 縮減上方留白，讓版面更緊湊專業 */
     .block-container {
         padding-top: 1.5rem !important;
         padding-bottom: 2rem !important;
     }
-    
-    /* 標題與段落間距微調 */
     h1 {
         font-size: 22px !important;
         font-weight: 700 !important;
         color: #1E293B;
         margin-bottom: 0px !important;
     }
-    
-    /* 輸入框文字與高度優化 */
     .stTextInput input {
         font-size: 16px !important;
         height: 40px !important;
         border-radius: 6px !important;
     }
-    
-    /* 查詢按鈕美化與對齊 */
     .stButton > button {
         height: 40px !important;
         font-size: 15px !important;
@@ -48,8 +41,6 @@ st.markdown(
     .stButton > button:hover {
         background-color: #1D4ED8 !important;
     }
-
-    /* 縮小 st.metric 的上下空白與邊距，使其更緊湊 */
     div[data-testid="stMetric"] {
         background-color: #F8FAFC;
         border: 1px solid #E2E8F0;
@@ -64,13 +55,9 @@ st.markdown(
         font-size: 20px !important;
         font-weight: 700 !important;
     }
-
-    /* 減少分隔線的垂直空間 */
     hr {
         margin: 1em 0px !important;
     }
-
-    /* 手機版 RWD 微調 */
     @media (max-width: 640px) {
         .stButton > button {
             margin-top: 0px;
@@ -99,12 +86,12 @@ st.markdown(
 
 st.markdown("---")
 
-# 搜尋列排版（縮減間距）
+# 搜尋列排版
 col_input, col_btn = st.columns([3, 1])
 
 with col_input:
   stock_input = st.text_input(
-      "請輸入台股代號", value="2330", label_visibility="collapsed"
+      "請輸入台股代號", value="3605", label_visibility="collapsed"
   )
 
 with col_btn:
@@ -121,7 +108,7 @@ if submit_btn and stock_input:
     df = pd.DataFrame()
     used_symbol = ""
 
-    with st.spinner("資料載入中..."):
+    with st.spinner("資料與即時行情載入中..."):
       try:
         for sym in symbols_to_try:
           temp_df = yf.download(sym, period="5d", interval="1d", progress=False)
@@ -147,7 +134,7 @@ if submit_btn and stock_input:
             high_prices = df["High"]
             low_prices = df["Low"]
 
-          # 另外抓取 6 個月資料來計算精準的 5T 與 10T RSI
+          # 計算精準的 5T 與 10T RSI
           df_long = yf.download(sym, period="6mo", interval="1d", progress=False)
           if isinstance(df_long.columns, pd.MultiIndex):
             long_close = df_long[("Close", used_symbol)]
@@ -180,16 +167,12 @@ if submit_btn and stock_input:
           latest_rsi_5 = float(rsi_5_series.iloc[-1])
           latest_rsi_10 = float(rsi_10_series.iloc[-1])
 
-          # 計算本日高低差與振幅百分比
           price_diff = latest_high - latest_low
           price_diff_pct = (
               (price_diff / latest_low) * 100 if latest_low > 0 else 0
           )
-
-          # 取得最新報價資料的日期字串
           last_date_str = str(df.index[-1].strftime("%Y-%m-%d"))
 
-          # 判斷是否已過 13:30 收盤
           market_closed = (
               now_taiwan.hour > 13
               or (now_taiwan.hour == 13 and now_taiwan.minute >= 30)
@@ -201,7 +184,7 @@ if submit_btn and stock_input:
               unsafe_allow_html=True,
           )
 
-          # 第一排：開盤、最高、最低、收盤 (或盤中即時價)
+          # 行情數值方塊
           if market_closed:
             c_p1, c_p2, c_p3, c_p4 = st.columns(4)
             with c_p1:
@@ -227,7 +210,6 @@ if submit_btn and stock_input:
                   delta="交易中",
               )
 
-          # 第二排：本日高低差與振幅
           c_d1, c_d2 = st.columns(2)
           with c_d1:
             st.metric(
@@ -238,15 +220,16 @@ if submit_btn and stock_input:
                 label="📊 本日振幅比例", value=f"{price_diff_pct:.2f}%"
             )
 
-          # 穩定可靠的近期走勢與收盤價曲線圖
+          # --- 🚀 外掛嵌入：直接帶出玩股網即時走勢與五檔畫面 ---
           st.markdown("---")
           st.markdown(
-              "**📈 近期價格走勢圖 (收盤價)**", unsafe_allow_html=True
+              f"**🌐 玩股網即時走勢與五檔 ({stock_digits})**",
+              unsafe_allow_html=True,
           )
-          chart_data = pd.DataFrame(
-              {"收盤價 / 即時價": close_prices.tail(30)}
-          )
-          st.line_chart(chart_data, height=200)
+
+          wantgoo_url = f"https://www.wantgoo.com/stock/{stock_digits}"
+          st.components.v1.iframe(wantgoo_url, height=450, scrolling=True)
+          # ----------------------------------------------------
 
           # RSI 數據呈現
           col_r1, col_r2 = st.columns(2)
@@ -261,7 +244,6 @@ if submit_btn and stock_input:
               "**🤖 系統智慧診斷與買賣策略**", unsafe_allow_html=True
           )
 
-          # 判定邏輯
           if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
             status_title = "🔴 極度過熱 / 高檔警戒區"
             stars = "⭐"
@@ -290,7 +272,7 @@ if submit_btn and stock_input:
                 "**建議：持股續抱，耐心等待短線止穩。**"
             )
           elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
-            status_title = "🟢 短線轉強 / 多頭買入訊號"
+            status_title = "🟢 短神轉強 / 多頭買入訊號"
             stars = "⭐⭐⭐⭐⭐"
             advice = (
                 "短天期動能大於中天期，且雙雙站在 50 中軸之上，短線買氣回溫，多方佔優勢！"
