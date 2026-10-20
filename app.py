@@ -2,21 +2,14 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
-# 網頁標題與蠟筆小新圖片
-st.title("📈 蠟筆小新台股專用 RSI 智慧查詢與診斷工具")
-
-st.image(
-    "https://i.imgur.com/8Q9K1mz.png",
-    caption="動感超人小新陪你一起看盤！",
-    width=250,
-)
-
+# 網頁標題
+st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
 st.write(
-    "本工具**僅支援台灣股市**。請輸入台股代號或中文名稱（例如：2330、台積電、3231、緯創、5347），"
+    "本工具**僅支援台灣股市**。請輸入台股代號或中文名稱（例如：2330、台積電、3231、緯創 或 5347），"
     "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
 )
 
-# 常見台股中文名稱對照字典（您可以隨時在這邊擴充更多喜歡的股票）
+# 常見台股中文名稱對照字典（可自行隨時擴充）
 stock_name_map = {
     "台積電": "2330",
     "緯創": "3231",
@@ -48,12 +41,11 @@ with col_btn:
 if submit_btn and stock_input:
   raw_input = stock_input.strip()
 
-  # 判斷使用者輸入的是中文名稱還是數字代號
+  # 判斷輸入的是中文名稱還是代號
   if raw_input in stock_name_map:
     stock_digits = stock_name_map[raw_input]
     st.info(f"偵測到您輸入【{raw_input}】，已自動對應至代號：{stock_digits}")
   else:
-    # 如果不是字典裡的中文，就過濾出數字
     stock_digits = "".join(filter(str.isdigit, raw_input))
 
   if not stock_digits:
