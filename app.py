@@ -9,13 +9,20 @@ st.write(
     "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
 )
 
-# 使用 CSS 讓按鈕與上方輸入框完美對齊排版
+# 使用 CSS 放大輸入框、設定文字大小為 20px 並完美對齊按鈕
 st.markdown(
     """
     <style>
-    /* 調整按鈕與輸入框對齊 */
+    /* 放大輸入框文字大小與高度 */
+    .stTextInput input {
+        font-size: 20px !important;
+        height: 50px !important;
+    }
+    /* 調整「確定查詢」按鈕的高度與邊距，使其與放大後的輸入框完美對齊 */
     .stButton > button {
         margin-top: 28px;
+        height: 50px !important;
+        font-size: 18px !important;
         width: 100%;
     }
     </style>
