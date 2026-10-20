@@ -3,7 +3,7 @@ import streamlit as st
 import yfinance as yf
 
 # 網頁標題
-st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
+st.title("📈RSI診斷工具")
 st.write(
     "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 5347），"
     "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
