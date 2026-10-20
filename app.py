@@ -9,31 +9,38 @@ st.set_page_config(
     page_title="台股專用 RSI 智慧查詢與診斷工具", page_icon="📈", layout="centered"
 )
 
-# 注入專業級 UI 樣式（美化卡片、適當字體大小、優化手機排版）
+# 注入專業級 UI 樣式（緊湊排版、減少空白、優化手機與桌機視覺）
 st.markdown(
     """
     <style>
-    /* 整體主標題與段落微調 */
-    h1 {
-        font-size: 24px !important;
-        font-weight: 700 !important;
-        color: #1E293B;
+    /* 縮減上方留白，讓版面更緊湊專業 */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 2rem !important;
     }
     
-    /* 輸入框文字與高度優化（適中大小，手機好打不卡字） */
+    /* 標題與段落間距微調 */
+    h1 {
+        font-size: 22px !important;
+        font-weight: 700 !important;
+        color: #1E293B;
+        margin-bottom: 0px !important;
+    }
+    
+    /* 輸入框文字與高度優化 */
     .stTextInput input {
         font-size: 16px !important;
-        height: 45px !important;
-        border-radius: 8px !important;
+        height: 40px !important;
+        border-radius: 6px !important;
     }
     
     /* 查詢按鈕美化與對齊 */
     .stButton > button {
-        height: 45px !important;
-        font-size: 16px !important;
+        height: 40px !important;
+        font-size: 15px !important;
         font-weight: 600 !important;
         width: 100%;
-        border-radius: 8px !important;
+        border-radius: 6px !important;
         background-color: #2563EB !important;
         color: white !important;
         border: none !important;
@@ -42,10 +49,31 @@ st.markdown(
         background-color: #1D4ED8 !important;
     }
 
+    /* 縮小 st.metric 的上下空白與邊距，使其更緊湊 */
+    div[data-testid="stMetric"] {
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+    div[data-testid="stMetric"] label {
+        font-size: 13px !important;
+        color: #64748B !important;
+    }
+    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
+        font-size: 20px !important;
+        font-weight: 700 !important;
+    }
+
+    /* 減少分隔線的垂直空間 */
+    hr {
+        margin: 1em 0px !important;
+    }
+
     /* 手機版 RWD 微調 */
     @media (max-width: 640px) {
         .stButton > button {
-            margin-top: 5px;
+            margin-top: 0px;
         }
     }
     </style>
@@ -62,17 +90,13 @@ current_time_str = now_taiwan.strftime("%H:%M")
 # 網頁標題與開發者署名
 st.title("📈 台股 RSI 智慧診斷工具")
 st.markdown(
-    f"<p style='color: #64748B; font-size: 13px; margin-bottom: 0px;'>📅 <b>目前日期：</b>{current_date_str} 🕒 <b>時間：</b>{current_time_str} (台股時間)</p>",
-    unsafe_allow_html=True,
-)
-st.markdown(
-    "<p style='color: #2563EB; font-size: 12px; font-weight: 600; margin-top: 5px;'>👨‍💻 開發者：尼克范 V.1.020</p>",
+    f"<p style='color: #64748B; font-size: 12px; margin-bottom: 2px;'>📅 <b>日期：</b>{current_date_str} 🕒 <b>時間：</b>{current_time_str} | <span style='color: #2563EB; font-weight: 600;'>👨‍💻 尼克范 V.1.020</span></p>",
     unsafe_allow_html=True,
 )
 
 st.markdown("---")
 
-# 搜尋列排版
+# 搜尋列排版（縮減間距）
 col_input, col_btn = st.columns([3, 1])
 
 with col_input:
@@ -94,10 +118,9 @@ if submit_btn and stock_input:
     df = pd.DataFrame()
     used_symbol = ""
 
-    with st.spinner(f"正在擷取代號 {stock_digits} 即時數據並計算 RSI..."):
+    with st.spinner("資料載入中..."):
       try:
         for sym in symbols_to_try:
-          # 抓取最近 5 天資料以取得即時價與開盤價
           temp_df = yf.download(sym, period="5d", interval="1d", progress=False)
           if not temp_df.empty:
             df = temp_df
@@ -169,11 +192,8 @@ if submit_btn and stock_input:
               or (now_taiwan.hour == 13 and now_taiwan.minute >= 30)
           )
 
-          st.success(f"**【{used_symbol}】 即時行情與報價資訊**")
-
-          # 顯示交易日期
           st.markdown(
-              f"<p style='color: #475569; font-size: 14px; margin-bottom: 5px;'>📅 交易日期：<b>{last_date_str}</b></p>",
+              f"**【{used_symbol}】 即時行情與報價** <span style='color: #64748B; font-size: 12px;'>({last_date_str})</span>",
               unsafe_allow_html=True,
           )
 
@@ -181,9 +201,7 @@ if submit_btn and stock_input:
           if market_closed:
             c_p1, c_p2, c_p3, c_p4 = st.columns(4)
             with c_p1:
-              st.metric(
-                  label=f"本日開盤 ({last_date_str})", value=f"{latest_open:.2f}"
-              )
+              st.metric(label="本日開盤", value=f"{latest_open:.2f}")
             with c_p2:
               st.metric(label="最高價", value=f"{latest_high:.2f}")
             with c_p3:
@@ -193,27 +211,23 @@ if submit_btn and stock_input:
           else:
             c_p1, c_p2, c_p3, c_p4 = st.columns(4)
             with c_p1:
-              st.metric(
-                  label=f"本日開盤 ({last_date_str} 09:00)",
-                  value=f"{latest_open:.2f}",
-              )
+              st.metric(label="本日開盤", value=f"{latest_open:.2f}")
             with c_p2:
               st.metric(label="盤中最高", value=f"{latest_high:.2f}")
             with c_p3:
               st.metric(label="盤中最低", value=f"{latest_low:.2f}")
             with c_p4:
               st.metric(
-                  label="即時價格 (盤中)",
+                  label="即時價格",
                   value=f"{latest_close:.2f}",
                   delta="交易中",
               )
 
-          # 第二排新增：本日高低差與振幅
+          # 第二排：本日高低差與振幅
           c_d1, c_d2 = st.columns(2)
           with c_d1:
             st.metric(
-                label="↕️ 本日高低差 (高 - 低)",
-                value=f"{price_diff:.2f} 元",
+                label="↕️ 本日高低差 (高-低)", value=f"{price_diff:.2f} 元"
             )
           with c_d2:
             st.metric(
@@ -229,13 +243,14 @@ if submit_btn and stock_input:
 
           # 智慧診斷與買賣策略建議區塊
           st.markdown("---")
-          st.subheader("🤖 系統智慧診斷與買賣策略")
+          st.markdown(
+              "**🤖 系統智慧診斷與買賣策略**", unsafe_allow_html=True
+          )
 
           # 判定邏輯
           if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
             status_title = "🔴 極度過熱 / 高檔警戒區"
             stars = "⭐"
-            symbol_icon = "🚨"
             advice = (
                 "5T 或 10T 來到 90 以上極高檔！符合「連續多日高檔、準備賣出」"
                 "的訊號特徵。短線過熱，強烈建議分批獲利了結、入袋為安！"
@@ -243,62 +258,9 @@ if submit_btn and stock_input:
           elif latest_rsi_5 > 70:
             status_title = "🟠 短線過熱（超買區）"
             stars = "⭐⭐"
-            symbol_icon = "🔥"
             advice = "短線漲幅過快，買氣過熱。若有持股可考慮適度調節，切勿盲目追高。"
           elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
             status_title = "🔴 短線超賣 / 弱勢"
             stars = "⭐⭐"
-            symbol_icon = "🤒"
             advice = (
                 "短線跌幅較重進入超賣區。若中期指標（10T）也跟著崩跌，需注意停損；"
-                "若 10T 仍有守，可觀察是否有打底機會。"
-            )
-          elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
-            status_title = "🟡 高檔技術性回檔 / 整理中"
-            stars = "⭐⭐⭐"
-            symbol_icon = "🛡️"
-            advice = (
-                "短線買氣稍微降溫（5T < 50），但中期多頭防線（10T >= 50）仍穩固。"
-                "**建議：持股續抱，耐心等待短線止穩。**"
-            )
-          elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
-            status_title = "🟢 短線轉強 / 多頭買入訊號"
-            stars = "⭐⭐⭐⭐⭐"
-            symbol_icon = "🚀"
-            advice = (
-                "短天期動能大於中天期，且雙雙站在 50 中軸之上，短線買氣回溫，多方佔優勢！"
-                "**建議：可考慮進場或加碼。**"
-            )
-          else:
-            status_title = "⚪ 多空拉鋸 / 盤整格局"
-            stars = "⭐⭐⭐"
-            symbol_icon = "⚖️"
-            advice = "目前數值顯示多空力道均衡，建議觀望，等待方向明確再行操作。"
-
-          st.markdown(f"**目前狀態：** {status_title} {symbol_icon}")
-          st.markdown(f"**操作推薦指數：** {stars}")
-          st.info(f"**買賣策略建議：**\n\n{advice}")
-
-          # 走勢圖表
-          st.markdown("---")
-          st.subheader("📊 近期 RSI 走勢圖")
-          rsi_chart_df = pd.DataFrame(
-              {"RSI_5": rsi_5_series, "RSI_10": rsi_10_series}
-          ).tail(30)
-          st.line_chart(rsi_chart_df)
-
-      except Exception as e:
-        st.error(f"讀取台股資料時發生錯誤：{e}")
-
-# 底部可折疊的 RSI 觀念備註
-st.markdown("---")
-with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明"):
-  st.markdown("""
-    * **數值範圍**：介於 0 到 100 之間。
-    * **多空分水嶺（50）**：
-        * **RSI > 50**：代表買方力道較強（多方市場）。
-        * **RSI < 50**：代表賣方力道較強（空方市場）。
-    * **超買與超賣區間**：
-        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
-        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
-    """)
