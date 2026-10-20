@@ -3,7 +3,7 @@ import streamlit as st
 import yfinance as yf
 
 # 網頁標題
-st.title("📈 台股專用 RSI 智慧查詢")
+st.title("📈 台股RSI智慧查詢")
 st.write(
     "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、6239），"
     "點擊確定後將自動計算 5T 與 10T RSI，並顯示最新收盤價、本日最高、最低與價差。"
