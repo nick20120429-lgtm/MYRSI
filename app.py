@@ -101,7 +101,9 @@ if stock_input:
         # 顯示近期走勢圖表
         st.markdown("---")
         st.subheader("📊 近期 RSI 走勢圖")
-        st.line_chart(df[["RSI_5", "RSI_10"]].tail(30))
 
-    except Exception as e:
-      st.error(f"讀取資料時發生錯誤：{e}")
+        # 確保只抓取 RSI_5 和 RSI_10 欄位來畫圖，避免多重索引報錯
+        rsi_chart_df = pd.DataFrame(
+            {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
+        ).tail(30)
+        st.line_chart(rsi_chart_df)
