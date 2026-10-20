@@ -6,7 +6,7 @@ import yfinance as yf
 st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
 st.write(
     "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、6239），"
-    "點擊確定後將自動計算 5T 與 10T RSI，並顯示最新收盤價、本日最高、最低與價差。"
+    "點擊確定後將自動計算 5T 與 10T RSI，並顯示最新收盤價、本日最高、最低、價差與詳細 RSI 狀態解析。"
 )
 
 # 簡易台股中文名稱對照字典（可自行擴充）
@@ -122,11 +122,12 @@ if submit_btn and stock_input:
             st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
 
           # ==========================
-          # 🎯 犀利媽法則分析
+          # 🎯 犀利媽法則分析與 RSI 狀態解析
           # ==========================
           st.markdown("---")
-          st.subheader("🎯 犀利媽法則分析")
+          st.subheader("🎯 犀利媽法則分析與 RSI 狀態解析")
 
+          # 燈號與評分判定邏輯
           if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
             light = "🔴 賣出燈"
             score = 20
@@ -158,7 +159,25 @@ if submit_btn and stock_input:
             conclusion = "方向未明"
             action = "暫時觀望"
 
+          # 動態帶出 5T 與 10T 的多空分水嶺與超買超賣解析
+          def get_rsi_status_text(rsi_val, name):
+            if rsi_val >= 90:
+              return f"🔥 **{name} ({rsi_val:.2f})**：進入 90+ 極度超買區（市場極度過熱，短線隨時有回檔風險，高檔可準備賣出）"
+            elif rsi_val >= 70:
+              return f"🟠 **{name} ({rsi_val:.2f})**：進入 ≥70 超買區（市場偏熱，短線追價需留意風險）"
+            elif rsi_val >= 50:
+              return f"🟢 **{name} ({rsi_val:.2f})**：大於 50 多空分水嶺（代表買方力道較強，處於**多方市場**）"
+            elif rsi_val >= 30:
+              return f"🟡 **{name} ({rsi_val:.2f})**：小於 50 分水嶺但未達超賣區（代表賣方力道較強，處於**空方市場**或盤整）"
+            else:
+              return f"🔵 **{name} ({rsi_val:.2f})**：小於等於 30 進入超賣區（市場過冷，短線有反彈或尋求買點機會）"
+
+          st.markdown("#### 📌 個股 RSI 深度解析：")
+          st.markdown(f"- {get_rsi_status_text(latest_rsi_5, '5日 RSI (5T)')}")
+          st.markdown(f"- {get_rsi_status_text(latest_rsi_10, '10日 RSI (10T)')}")
+
           # ===== 一眼看懂 =====
+          st.markdown("---")
           col_a, col_b, col_c_status = st.columns(3)
           with col_a:
             st.metric("燈號", light)
@@ -212,8 +231,4 @@ with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明")
     * **數值範圍**：介於 0 到 100 之間。
     * **多空分水嶺（50）**：
         * **RSI > 50**：代表買方力道較強（多方市場）。
-        * **RSI < 50**：代表賣方力道較強（空方市場）。
-    * **超買與超賣區間**：
-        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
-        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
-    """)
+        * **RSI
