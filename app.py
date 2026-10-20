@@ -1,3 +1,4 @@
+import feedparser
 import pandas as pd
 import streamlit as st
 import yfinance as yf
@@ -58,7 +59,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    "<p style='color: #2563EB; font-size: 12px; font-weight: 600;'>👨‍💻 開發者：尼克范 V.1.020</p>",
+    "<p style='color: #2563EB; font-size: 12px; font-weight: 600;'>👨‍💻 開發者：尼克范"
+    " V.1.020</p>",
     unsafe_allow_html=True,
 )
 
@@ -100,10 +102,17 @@ if submit_btn and stock_input:
               f"找不到代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
           )
         else:
+          # 檢查 MultiIndex 欄位結構以正確抓取價格
           if isinstance(df.columns, pd.MultiIndex):
             close_prices = df[("Close", used_symbol)]
+            open_prices = df[("Open", used_symbol)]
+            high_prices = df[("High", used_symbol)]
+            low_prices = df[("Low", used_symbol)]
           else:
             close_prices = df["Close"]
+            open_prices = df["Open"]
+            high_prices = df["High"]
+            low_prices = df["Low"]
 
 
           def calculate_rsi(data, window=14):
@@ -124,16 +133,28 @@ if submit_btn and stock_input:
           df["RSI_5"] = calculate_rsi(close_prices, window=5)
           df["RSI_10"] = calculate_rsi(close_prices, window=10)
 
+          latest_open = float(open_prices.iloc[-1])
+          latest_high = float(high_prices.iloc[-1])
+          latest_low = float(low_prices.iloc[-1])
           latest_close = float(close_prices.iloc[-1])
           latest_rsi_5 = float(df["RSI_5"].iloc[-1])
           latest_rsi_10 = float(df["RSI_10"].iloc[-1])
 
-          # 成功提示與收盤價
-          st.success(
-              f"**【{used_symbol}】** 最新收盤價：**{latest_close:.2f} 元**"
-          )
+          # 顯示股票代號與當日開盤、收盤等行情資訊
+          st.success(f"**【{used_symbol}】 最新交易行情**")
 
-          # 專業卡片式數據呈現
+          # 用四欄位整齊呈現：開盤價、最高價、最低價、最新收盤價
+          c_p1, c_p2, c_p3, c_p4 = st.columns(4)
+          with c_p1:
+            st.metric(label="開盤價", value=f"{latest_open:.2f}")
+          with c_p2:
+            st.metric(label="最高價", value=f"{latest_high:.2f}")
+          with c_p3:
+            st.metric(label="最低價", value=f"{latest_low:.2f}")
+          with c_p4:
+            st.metric(label="收盤價", value=f"{latest_close:.2f}")
+
+          # RSI 數據呈現
           col_r1, col_r2 = st.columns(2)
           with col_r1:
             st.metric(label="5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
@@ -202,6 +223,22 @@ if submit_btn and stock_input:
 
       except Exception as e:
         st.error(f"讀取台股資料時發生錯誤：{e}")
+
+# 底部新聞概要區塊（經濟日報即時產經新聞）
+st.markdown("---")
+st.subheader("📰 經濟日報 - 即時產經新聞概要")
+
+try:
+  feed_url = "https://money.udn.com/rssfeed/news/1001/5591/5591?ch=mm"
+  news_feed = feedparser.parse(feed_url)
+
+  if news_feed.entries:
+    for entry in news_feed.entries[:5]:
+      st.markdown(f"• [{entry.title}]({entry.link})")
+  else:
+    st.info("目前無法取得即時新聞，請稍後再試。")
+except Exception:
+  st.info("目前新聞資訊連線中...")
 
 # 底部可折疊的 RSI 觀念備註
 st.markdown("---")
