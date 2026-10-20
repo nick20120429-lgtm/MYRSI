@@ -202,32 +202,3 @@ if submit_btn and stock_input:
             st.metric(
                 label="本年最高 / 最低",
                 value=f"{year_high:.2f}",
-                delta=f"低 {year_low:.2f}",
-            )
-
-          # 口訣解讀邏輯判定與白話對照輸出
-          st.markdown("---")
-          st.subheader("🤖 依口訣邏輯進行的系統智慧診斷與操作建議")
-
-          if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
-            status_title = "🔴 **極度過熱 / 高檔警戒區**"
-            stars = "⭐"
-            symbol_icon = "🚨"
-            meaning = "短線過熱，買氣來到極高檔，追價意願易竭盡。"
-            action = "分批獲利了結、入袋為安！"
-          elif latest_rsi_5 > 70:
-            status_title = "🟠 **短線過熱（超買區）**"
-            stars = "⭐⭐"
-            symbol_icon = "🔥"
-            meaning = "短線漲幅過快，買氣過熱。"
-            action = "適度調節，切勿盲目追高。"
-          elif latest_rsi_5 < 50 and latest_rsi_10 < 50:
-            status_title = "🔴 **跌破 10T（趨勢轉空）**"
-            stars = "⭐⭐"
-            symbol_icon = "🛑"
-            meaning = (
-                "跌破 10T ➔ 代表趨勢轉空、防線失守，過去一段時間的多頭結構遭到破壞。"
-            )
-            action = "全數停損離場 / 加碼放空"
-          elif latest_rsi_5 < 50 and latest_rsi_10 >= 50:
-            status_title =
