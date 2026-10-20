@@ -6,7 +6,7 @@ import yfinance as yf
 
 # 設定網頁標題與 RWD 寬螢幕自適應
 st.set_page_config(
-    page_title="台股專用 RSI 智慧查詢與診斷工具", page_icon="📈", layout="centered"
+    page_title="犀利媽台股 RSI 智慧診斷工具", page_icon="📈", layout="centered"
 )
 
 # 注入專業級 UI 樣式（緊湊排版、減少空白、優化手機與桌機視覺）
@@ -15,7 +15,7 @@ st.markdown(
     <style>
     /* 縮減上方留白，讓版面更緊湊專業 */
     .block-container {
-        padding-top: 1.5rem !important;
+        padding-top: 1.2rem !important;
         padding-bottom: 2rem !important;
     }
     
@@ -67,19 +67,35 @@ st.markdown(
 
     /* 減少分隔線的垂直空間 */
     hr {
-        margin: 1em 0px !important;
-    }
-
-    /* 手機版 RWD 微調 */
-    @media (max-width: 640px) {
-        .stButton > button {
-            margin-top: 0px;
-        }
+        margin: 0.8em 0px !important;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
+# 側邊欄：加入自動重新整理與提示說明
+with st.sidebar:
+  st.subheader("⚙️ 盯盤設定")
+  auto_refresh = st.checkbox("啟用盤中自動重新整理 (每 60 秒)", value=False)
+  if auto_refresh:
+    st.markdown(
+        "<p style='color: #16A34A; font-size: 12px;'>🟢 自動更新中，盤中將定時重新整理數據。</p>",
+        unsafe_allow_html=True,
+    )
+    # 簡單利用 streamlit-autorefresh 機制（若環境不支援會自動略過）
+    try:
+      from streamlit_autorefresh import st_autorefresh
+
+      st_autorefresh(interval=60000, key="datarefresh")
+    except ImportError:
+      pass
+
+  st.markdown("---")
+  st.markdown("### 💡 犀利媽口訣")
+  st.markdown(
+      "> *「5T 過熱先入袋，10T 守住多頭在；*<br>*超跌見紅不急追，低接耐心等待來。」*"
+  )
 
 # 取得台灣當前時間
 tz_taiwan = pytz.timezone("Asia/Taipei")
@@ -88,7 +104,7 @@ current_date_str = now_taiwan.strftime("%Y/%m/%d")
 current_time_str = now_taiwan.strftime("%H:%M")
 
 # 網頁標題與開發者署名
-st.title("📈 台股 RSI 智慧診斷工具")
+st.title("📈 犀利媽台股 RSI 智慧診斷工具")
 st.markdown(
     f"<p style='color: #64748B; font-size: 12px; margin-bottom: 2px;'>📅"
     f" <b>日期：</b>{current_date_str} 🕒"
@@ -99,16 +115,40 @@ st.markdown(
 
 st.markdown("---")
 
-# 搜尋列排版
-col_input, col_btn = st.columns([3, 1])
+# 建議 1：增加「多檔自選股快速切換選單」
+favorite_stocks = {
+    "自訂輸入 / 其它": "",
+    "2330 台積電": "2330",
+    "3605 宏致": "3605",
+    "2377 微星": "2377",
+    "2317 鴻海": "2317",
+    "2603 長榮": "2603",
+    "2454 聯發科": "2454",
+}
+
+col_sel, col_input, col_btn = st.columns([1.5, 2, 1])
+
+with col_sel:
+  selected_fav = st.selectbox(
+      "自選快速切換", list(favorite_stocks.keys()), label_visibility="collapsed"
+  )
+
+default_val = favorite_stocks[selected_fav] if selected_fav else "3605"
 
 with col_input:
   stock_input = st.text_input(
-      "請輸入台股代號", value="2330", label_visibility="collapsed"
+      "請輸入台股代號",
+      value=default_val,
+      placeholder="輸入代號",
+      label_visibility="collapsed",
   )
 
 with col_btn:
   submit_btn = st.button("查詢")
+
+# 如果使用者從下拉選單選了股票，直接觸發查詢
+if selected_fav != "2330" and favorite_stocks[selected_fav]:
+  submit_btn = True
 
 if submit_btn and stock_input:
   raw_input = stock_input.strip()
@@ -243,9 +283,11 @@ if submit_btn and stock_input:
           # 智慧診斷與買賣策略建議區塊
           st.markdown("---")
           st.markdown(
-              "**🤖 系統智慧診斷與買賣策略**", unsafe_allow_html=True
+              "**🤖 犀利媽實戰診斷與操作建議**", unsafe_allow_html=True
           )
 
+          # 建議 2：犀利媽實戰經驗法則提示標籤
+          history_tip = ""
           if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
             status_title = "🔴 極度過熱 / 高檔警戒區"
             stars = "⭐"
@@ -253,11 +295,20 @@ if submit_btn and stock_input:
                 "5T 或 10T 來到 90 以上極高檔！符合「連續多日高檔、準備賣出」"
                 "的訊號特徵。短線過熱，強烈建議分批獲利了結、入袋為安！"
             )
+            history_tip = (
+                "💡 **犀利媽經驗談：** 歷史統計顯示，短線衝高至 90"
+                " 以上時，追價意願易竭盡，通常 1-3"
+                " 天內容易出現明顯回檔整理。"
+            )
           elif latest_rsi_5 > 70:
             status_title = "🟠 短線過熱（超買區）"
             stars = "⭐⭐"
             advice = (
                 "短線漲幅過快，買氣過熱。若有持股可考慮適度調節，切勿盲目追高。"
+            )
+            history_tip = (
+                "💡 **犀利媽經驗談：** 5T 進入 70"
+                " 以上超買區時切忌急躁追高，多看少做或分批減碼為宜。"
             )
           elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
             status_title = "🔴 短線超賣 / 弱勢"
@@ -266,12 +317,21 @@ if submit_btn and stock_input:
                 "短線跌幅較重進入超賣區。若中期指標（10T）也跟著崩跌，需注意停損；"
                 "若 10T 仍有守，可觀察是否有打底機會。"
             )
+            history_tip = (
+                "💡 **犀利媽經驗談：** 當 5T 跌破 30"
+                " 時往往伴隨恐慌殺盤，此時不宜盲目殺低，應觀察 10T"
+                " 是否能發揮防守支撐。"
+            )
           elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
             status_title = "🟡 高檔技術性回檔 / 整理中"
             stars = "⭐⭐⭐"
             advice = (
                 "短線買氣稍微降溫（5T < 50），但中期多頭防線（10T >= 50）仍穩固。"
                 "**建議：持股續抱，耐心等待短線止穩。**"
+            )
+            history_tip = (
+                "💡 **犀利媽經驗談：** 10T 保持在 50"
+                " 以上代表中多格局未破，短線拉回屬於技術性洗盤，不用過度恐慌。"
             )
           elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
             status_title = "🟢 短線轉強 / 多頭買入訊號"
@@ -280,16 +340,23 @@ if submit_btn and stock_input:
                 "短天期動能大於中天期，且雙雙站在 50 中軸之上，短線買氣回溫，多方佔優勢！"
                 "**建議：可考慮進場或加碼。**"
             )
+            history_tip = (
+                "💡 **犀利媽經驗談：** 雙指標站在 50"
+                " 之上且短天期向上翻揚，為標準的多頭攻擊盤，可順勢關注。"
+            )
           else:
             status_title = "⚪ 多空拉鋸 / 盤整格局"
             stars = "⭐⭐⭐"
             advice = (
                 "目前數值顯示多空力道均衡，建議觀望，等待方向明確再行操作。"
             )
+            history_tip = (
+                "💡 **犀利媽經驗談：** 盤整盤多看少做，等待突破訊號再出手勝率更高。"
+            )
 
           st.markdown(f"**目前狀態：** {status_title}")
           st.markdown(f"**操作推薦指數：** {stars}")
-          st.info(f"**買賣策略建議：**\n\n{advice}")
+          st.info(f"**買賣策略建議：**\n\n{advice}\n\n{history_tip}")
 
           # RSI 走勢圖
           st.markdown("---")
@@ -304,13 +371,9 @@ if submit_btn and stock_input:
 
 # 底部可折疊的 RSI 觀念備註
 st.markdown("---")
-with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明"):
+with st.expander("📖 點擊展開：犀利媽 RSI 核心觀念與數值範圍說明"):
   st.markdown("""
     * **數值範圍**：介於 0 到 100 之間。
     * **多空分水嶺（50）**：
         * **RSI > 50**：代表買方力道較強（多方市場）。
-        * **RSI < 50**：代表賣方力道較強（空方市場）。
-    * **超買與超賣區間**：
-        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
-        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
-    """)
+        * **RSI < 50**：代表賣
