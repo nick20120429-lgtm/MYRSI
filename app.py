@@ -246,7 +246,7 @@ if submit_btn and stock_input:
                     st.subheader("📊 近期 RSI 走勢圖")
                     rsi_chart_df = pd.DataFrame(
                         {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
-                    ).tail(30)
+                    ).tail(60)
                     st.line_chart(rsi_chart_df)
 
             except Exception as e:
