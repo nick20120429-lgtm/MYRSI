@@ -1,9 +1,9 @@
-# =====================
-# 🎯 犀利媽法則分析
-# =====================
+# ===========================
+# 犀利媽法則分析
+# ===========================
 
 st.markdown("---")
-st.subheader("🎯 犀利媽法則分析結果")
+st.subheader("🎯 犀利媽法則分析")
 
 if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
 
@@ -12,12 +12,10 @@ if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
     score = 20
 
     advice = """
-    ✅ 建議動作：分批獲利了結
-
-    • 短線漲幅過大
-    • 不建議追價
-    • 可逐步落袋為安
-    """
+• RSI 已進入極度過熱區
+• 不建議追價
+• 建議分批獲利了結
+"""
 
 elif latest_rsi_5 >= 70:
 
@@ -26,12 +24,10 @@ elif latest_rsi_5 >= 70:
     score = 40
 
     advice = """
-    ✅ 建議動作：停止追價
-
-    • 市場買氣過熱
-    • 持股續抱即可
-    • 不建議新資金追高
-    """
+• 短線漲幅過大
+• 不建議新資金追高
+• 持股可續抱觀察
+"""
 
 elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
 
@@ -40,13 +36,11 @@ elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
     score = 95
 
     advice = """
-    ✅ 建議動作：買進或加碼
-
-    • 5T突破10T
-    • 短線動能強於中期
-    • 多方主導盤勢
-    • 為最佳進場區域
-    """
+• 5T 大於 10T
+• 短線動能強於中期
+• 多方主導盤勢
+• 可考慮買進或加碼
+"""
 
 elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
 
@@ -55,13 +49,10 @@ elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
     score = 80
 
     advice = """
-    ✅ 建議動作：續抱等待
-
-    • 多頭架構仍在
-    • 短線拉回整理
-    • 無須急著賣出
-    • 等待下一次攻擊
-    """
+• 中期趨勢仍維持多頭
+• 短線技術性整理
+• 建議續抱等待
+"""
 
 elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
 
@@ -70,46 +61,40 @@ elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
     score = 75
 
     advice = """
-    ✅ 建議動作：觀察反彈
-
-    • 短線跌深
-    • 留意打底訊號
-    • 適合觀察布局
-    """
+• 已進入超賣區
+• 留意是否出現反彈
+• 可觀察布局機會
+"""
 
 else:
 
-    status = "⚪ 多空拉鋸區"
+    status = "⚪ 觀望區"
     stars = "⭐⭐⭐"
     score = 50
 
     advice = """
-    ✅ 建議動作：觀望
+• 多空拉鋸
+• 方向尚未明確
+• 建議觀望
+"""
 
-    • 多空方向不明
-    • 等待突破
-    • 暫不積極操作
-    """
+# ===== 一眼看懂 =====
 
-# =====================
-# 一眼看懂區
-# =====================
+col_a, col_b, col_c = st.columns(3)
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
+with col_a:
     st.metric(
         "目前狀態",
         status
     )
 
-with col2:
+with col_b:
     st.metric(
         "推薦指數",
         stars
     )
 
-with col3:
+with col_c:
     st.metric(
         "買進評分",
         f"{score}/100"
@@ -117,41 +102,33 @@ with col3:
 
 st.progress(score)
 
-# =====================
-# 結論框
-# =====================
+# ===== 犀利媽結論 =====
 
 if score >= 90:
-    st.success(
-        f"""
+
+    st.success(f"""
 【犀利媽結論】
 
-目前屬於 {status}
+{status}
 
 買進評分：{score}/100
 
-建議：
 ✅ 可買進
+
 ✅ 可加碼
+
 ✅ 持股續抱
-"""
-    )
+""")
 
 elif score >= 75:
-    st.info(
-        f"""
+
+    st.info(f"""
 【犀利媽結論】
 
-目前屬於 {status}
+{status}
 
 買進評分：{score}/100
 
-建議：
 ✅ 持股續抱
-✅ 等待下一次訊號
-"""
-    )
 
-elif score >= 50:
-    st.warning(
- 
+✅ 等待下一次攻
