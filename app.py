@@ -262,26 +262,3 @@ if submit_btn or selected_fav:
           stars = "⭐⭐"
           advice = (
               "短線跌幅較重進入超賣區。若中期指標（10T）也跟著崩跌，需注意停損；"
-              "若 10T 仍有守，可觀察是否有打底機會。"
-          )
-          history_tip = (
-              "💡 **犀利媽經驗談：** 當 5T 跌破 30"
-              " 時往往伴隨恐慌殺盤，此時不宜盲目殺低，應觀察 10T"
-              " 是否能發揮防守支撐。"
-          )
-        elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
-          status_title = "🟡 高檔技術性回檔 / 整理中"
-          stars = "⭐⭐⭐"
-          advice = (
-              "短線買氣稍微降溫（5T < 50），但中期多頭防線（10T >= 50）仍穩固。"
-              "**建議：持股續抱，耐心等待短線止穩。**"
-          )
-          history_tip = (
-              "💡 **犀利媽經驗談：** 10T 保持在 50"
-              " 以上代表中多格局未破，短線拉回屬於技術性洗盤，不用過度恐慌。"
-          )
-        elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
-          status_title = "🟢 短線轉強 / 多頭買入訊號"
-          stars = "⭐⭐⭐⭐⭐"
-          advice = (
-              "短天期動能大於中天期，且雙雙站在 50 中軸之上，
