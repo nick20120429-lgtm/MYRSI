@@ -4,37 +4,9 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
-# 設定網頁標題與 RWD 寬螢幕自適應
+# 設定網頁標題
 st.set_page_config(
     page_title="台股 RSI 智慧診斷工具", page_icon="📈", layout="centered"
-)
-
-# 注入自訂樣式：輸入框與查詢按鈕高度同為 40px 等高對齊
-st.markdown(
-    """
-    <style>
-    .stTextInput input {
-        font-size: 16px !important;
-        height: 40px !important;
-        border-radius: 6px !important;
-        border: 1px solid #CBD5E1 !important;
-    }
-    .stButton > button {
-        height: 40px !important;
-        font-size: 15px !important;
-        font-weight: 600 !important;
-        width: 100%;
-        border-radius: 6px !important;
-        background-color: #2563EB !important;
-        color: white !important;
-        border: none !important;
-    }
-    .stButton > button:hover {
-        background-color: #1D4ED8 !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
 )
 
 # 取得台灣當前時間
@@ -43,7 +15,7 @@ now_taiwan = datetime.now(tz_taiwan)
 current_date_str = now_taiwan.strftime("%Y/%m/%d")
 current_time_str = now_taiwan.strftime("%H:%M")
 
-# 網頁頂部標題與開發者署名
+# 網頁頂部標題
 st.markdown(
     "<div style='text-align: center; margin-bottom: 15px;'>"
     "<h2 style='font-weight: 700; color: #202124; margin-bottom: 5px;'>📈"
@@ -55,29 +27,22 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 固定實戰口訣看板
+# 實戰口訣看板
 st.info(
     "💡 **實戰操作口訣：**\n\n"
-    "> * 🚀 **站上 5T（強勢）**：極強勢攻擊 ➔ 短線買進 / 多單續抱\n"
-    "> * ⚠️ **跌破 5T（轉弱）**：攻勢受阻、轉弱警訊 ➔ 減碼停利 / 試探性建倉\n"
-    "> * 🛑 **跌破 10T（破防）**：趨勢轉空、防線失守 ➔ 全數停損離場 / 加碼放空"
+    "* 🚀 **站上 5T（強勢）**：極強勢攻擊 ➔ 短線買進 / 多單續抱\n"
+    "* ⚠️ **跌破 5T（轉弱）**：攻勢受阻、轉弱警訊 ➔ 減碼停利 / 試探性建倉\n"
+    "* 🛑 **跌破 10T（破防）**：趨勢轉空、防線失守 ➔ 全數停損離場 / 加碼放空"
 )
 
 st.write(
-    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 2377），"
+    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605），"
     "點擊確定後將自動計算 5T 與 10T RSI、極高低價並對照口訣提供操作建議。"
 )
 
-# 使用欄位排版讓輸入框跟按鈕並排
-col_input, col_btn = st.columns([3, 1])
-
-with col_input:
-  stock_input = st.text_input(
-      "請輸入台股代號（例如 2330）：", value="2330", label_visibility="collapsed"
-  )
-
-with col_btn:
-  submit_btn = st.button("確定查詢", type="primary")
+# 輸入與按鈕
+stock_input = st.text_input("請輸入台股代號（例如 2330）：", value="2330")
+submit_btn = st.button("確定查詢", type="primary")
 
 if submit_btn and stock_input:
   raw_input = stock_input.strip()
@@ -90,10 +55,8 @@ if submit_btn and stock_input:
     df = pd.DataFrame()
     used_symbol = ""
 
-    with st.spinner(
-        f"正在鎖定台股代號 {stock_digits} 抓取歷史數據並精準計算..."
-    ):
-      try:
+    try:
+      with st.spinner("正在抓取歷史數據並計算中..."):
         for sym in symbols_to_try:
           temp_df = yf.download(sym, period="1y", interval="1d", progress=False)
           if not temp_df.empty and len(temp_df) > 10:
@@ -103,10 +66,9 @@ if submit_btn and stock_input:
 
         if df.empty:
           st.error(
-              f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
+              f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確。"
           )
         else:
-          # 確保欄位為單一階層
           if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
 
@@ -163,9 +125,7 @@ if submit_btn and stock_input:
           latest_rsi_5 = float(df["RSI_5"].iloc[-1])
           latest_rsi_10 = float(df["RSI_10"].iloc[-1])
 
-          st.success(
-              f"成功取得台股【{used_symbol}】最新收盤價：{latest_close:.2f} 元"
-          )
+          st.success(f"成功取得台股【{used_symbol}】最新收盤價：{latest_close:.2f} 元")
 
           # 顯示 RSI 指標
           col1, col2 = st.columns(2)
@@ -174,75 +134,33 @@ if submit_btn and stock_input:
           with col2:
             st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
 
-          # 顯示本日、本月、本年最高最低價區塊
+          # 顯示極值
           st.markdown("---")
-          st.subheader("📊 價格區間極值統計（本日 / 本月 / 本年）")
+          st.subheader("📊 價格區間極值統計")
+          st.write(
+              f"• **本日**：最高 {day_high:.2f}元 / 最低 {day_low:.2f}元"
+          )
+          st.write(
+              f"• **本月**：最高 {month_high:.2f}元 / 最低 {month_low:.2f}元"
+          )
+          st.write(
+              f"• **本年**：最高 {year_high:.2f}元 / 最低 {year_low:.2f}元"
+          )
 
-          p_col1, p_col2, p_col3 = st.columns(3)
-          with p_col1:
-            st.metric(
-                label="本日最高 / 最低",
-                value=f"{day_high:.2f}",
-                delta=f"低 {day_low:.2f}",
-            )
-          with p_col2:
-            st.metric(
-                label="本月最高 / 最低",
-                value=f"{month_high:.2f}",
-                delta=f"低 {month_low:.2f}",
-            )
-          with p_col3:
-            st.metric(
-                label="本年最高 / 最低",
-                value=f"{year_high:.2f}",
-                delta=f"低 {year_low:.2f}",
-            )
-
-          # 系統智慧診斷與操作建議
+          # 智慧診斷
           st.markdown("---")
-          st.subheader("🤖 依口訣邏輯進行的系統智慧診斷與操作建議")
+          st.subheader("🤖 系統智慧診斷與操作建議")
 
           if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
-            status_title = "🔴 **極度過熱 / 高檔警戒區**"
-            stars = "⭐"
-            symbol_icon = "🚨"
-            meaning = "短線過熱，買氣來到極高檔，追價意願易竭盡。"
+            status_title = "🔴 極度過熱 / 高檔警戒區"
+            meaning = "短線過熱，買氣來到極高檔。"
             action = "分批獲利了結、入袋為安！"
           elif latest_rsi_5 > 70:
-            status_title = "🟠 **短線過熱（超買區）**"
-            stars = "⭐⭐"
-            symbol_icon = "🔥"
+            status_title = "🟠 短線過熱（超買區）"
             meaning = "短線漲幅過快，買氣過熱。"
             action = "適度調節，切勿盲目追高。"
           elif latest_rsi_5 < 50 and latest_rsi_10 < 50:
-            status_title = "🔴 **跌破 10T（趨勢轉空）**"
-            stars = "⭐⭐"
-            symbol_icon = "🛑"
-            meaning = (
-                "跌破 10T ➔ 代表趨勢轉空、防線失守，過去一段時間的多頭結構遭到破壞。"
-            )
+            status_title = "🔴 跌破 10T（趨勢轉空）"
+            meaning = "跌破 10T ➔ 代表趨勢轉空、防線失守。"
             action = "全數停損離場 / 加碼放空"
-          elif latest_rsi_5 < 50 and latest_rsi_10 >= 50:
-            status_title = "🟡 **跌破 5T（攻勢受阻）**"
-            stars = "⭐⭐⭐"
-            symbol_icon = "⚠️"
-            meaning = (
-                "跌破 5T ➔ 代表短線攻勢受阻、出現轉弱警訊（但 10T 中期防線尚存）。"
-            )
-            action = "減碼停利 / 試探性建立空單"
-          elif latest_rsi_5 >= 50 and latest_rsi_10 >= 50:
-            status_title = "🟢 **站上 5T（極強勢攻擊）**"
-            stars = "⭐⭐⭐⭐⭐"
-            symbol_icon = "🚀"
-            meaning = "站上 5T ➔ 代表短線動能強勁，為極強勢攻擊盤面！"
-            action = "短線買進 / 多單續抱"
-          else:
-            status_title = "⚪ **多空拉鋸 / 盤整格局**"
-            stars = "⭐⭐⭐"
-            symbol_icon = "⚖️"
-            meaning = "目前數值顯示多空力道均衡，方向尚未明確。"
-            action = "建議觀望，等待突破再行操作。"
-
-          st.markdown(f"**目前狀態：** {status_title} {symbol_icon}")
-          st.markdown(f"**操作推薦指數：** {stars}")
-          st.markdown(
+          elif latest_rsi_5 < 50 and latest_rsi_10 >=
