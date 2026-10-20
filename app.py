@@ -83,7 +83,6 @@ with st.sidebar:
         "<p style='color: #16A34A; font-size: 12px;'>🟢 自動更新中，盤中將定時重新整理數據。</p>",
         unsafe_allow_html=True,
     )
-    # 簡單利用 streamlit-autorefresh 機制（若環境不支援會自動略過）
     try:
       from streamlit_autorefresh import st_autorefresh
 
@@ -115,7 +114,7 @@ st.markdown(
 
 st.markdown("---")
 
-# 建議 1：增加「多檔自選股快速切換選單」
+# 自選股快速切換選單
 favorite_stocks = {
     "自訂輸入 / 其它": "",
     "2330 台積電": "2330",
@@ -146,8 +145,7 @@ with col_input:
 with col_btn:
   submit_btn = st.button("查詢")
 
-# 如果使用者從下拉選單選了股票，直接觸發查詢
-if selected_fav != "2330" and favorite_stocks[selected_fav]:
+if selected_fav != "自訂輸入 / 其它" and favorite_stocks[selected_fav]:
   submit_btn = True
 
 if submit_btn and stock_input:
@@ -175,7 +173,6 @@ if submit_btn and stock_input:
               f"找不到代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
           )
         else:
-          # 檢查 MultiIndex 欄位結構
           if isinstance(df.columns, pd.MultiIndex):
             close_prices = df[("Close", used_symbol)]
             open_prices = df[("Open", used_symbol)]
@@ -187,7 +184,6 @@ if submit_btn and stock_input:
             high_prices = df["High"]
             low_prices = df["Low"]
 
-          # 計算精準的 5T 與 10T RSI
           df_long = yf.download(sym, period="6mo", interval="1d", progress=False)
           if isinstance(df_long.columns, pd.MultiIndex):
             long_close = df_long[("Close", used_symbol)]
@@ -237,7 +233,6 @@ if submit_btn and stock_input:
               unsafe_allow_html=True,
           )
 
-          # 行情數值方塊
           if market_closed:
             c_p1, c_p2, c_p3, c_p4 = st.columns(4)
             with c_p1:
@@ -273,20 +268,17 @@ if submit_btn and stock_input:
                 label="📊 本日振幅比例", value=f"{price_diff_pct:.2f}%"
             )
 
-          # RSI 數據呈現
           col_r1, col_r2 = st.columns(2)
           with col_r1:
             st.metric(label="5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
           with col_r2:
             st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
 
-          # 智慧診斷與買賣策略建議區塊
           st.markdown("---")
           st.markdown(
               "**🤖 犀利媽實戰診斷與操作建議**", unsafe_allow_html=True
           )
 
-          # 建議 2：犀利媽實戰經驗法則提示標籤
           history_tip = ""
           if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
             status_title = "🔴 極度過熱 / 高檔警戒區"
@@ -358,7 +350,6 @@ if submit_btn and stock_input:
           st.markdown(f"**操作推薦指數：** {stars}")
           st.info(f"**買賣策略建議：**\n\n{advice}\n\n{history_tip}")
 
-          # RSI 走勢圖
           st.markdown("---")
           st.markdown("**📊 近期 RSI 走勢圖**", unsafe_allow_html=True)
           rsi_chart_df = pd.DataFrame(
@@ -369,11 +360,16 @@ if submit_btn and stock_input:
       except Exception as e:
         st.error(f"讀取台股資料時發生錯誤：{e}")
 
-# 底部可折疊的 RSI 觀念備註
 st.markdown("---")
 with st.expander("📖 點擊展開：犀利媽 RSI 核心觀念與數值範圍說明"):
-  st.markdown("""
+  st.markdown(
+      """
     * **數值範圍**：介於 0 到 100 之間。
     * **多空分水嶺（50）**：
         * **RSI > 50**：代表買方力道較強（多方市場）。
-        * **RSI < 50**：代表賣
+        * **RSI < 50**：代表賣方力道較強（空方市場）。
+    * **超買與超賣區間**：
+        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
+        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
+    """
+  )
