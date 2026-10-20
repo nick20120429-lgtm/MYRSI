@@ -238,29 +238,15 @@ if submit_btn and stock_input:
                 label="📊 本日振幅比例", value=f"{price_diff_pct:.2f}%"
             )
 
-          # 新增：仿玩股網之「當日即時走勢圖（分時走勢）」
+          # 穩定可靠的近期走勢與收盤價曲線圖
           st.markdown("---")
           st.markdown(
-              "**📈 當日即時走勢圖 (Intraday)**", unsafe_allow_html=True
+              "**📈 近期價格走勢圖 (收盤價)**", unsafe_allow_html=True
           )
-          try:
-            # 抓取最近 1 天的 1 分鐘即時走勢資料
-            intraday_df = yf.download(
-                used_symbol, period="1d", interval="1m", progress=False
-            )
-            if not intraday_df.empty:
-              if isinstance(intraday_df.columns, pd.MultiIndex):
-                intra_close = intraday_df[("Close", used_symbol)]
-              else:
-                intra_close = intraday_df["Close"]
-              st.line_chart(intra_close, height=200)
-            else:
-              st.info(
-                  "目前非盤中交易時間或尚無當日分時資料，可參考下方日 RSI"
-                  " 走勢。"
-              )
-          except Exception:
-            st.info("無法載入即時分時走勢。")
+          chart_data = pd.DataFrame(
+              {"收盤價 / 即時價": close_prices.tail(30)}
+          )
+          st.line_chart(chart_data, height=200)
 
           # RSI 數據呈現
           col_r1, col_r2 = st.columns(2)
@@ -321,7 +307,7 @@ if submit_btn and stock_input:
           st.markdown(f"**操作推薦指數：** {stars}")
           st.info(f"**買賣策略建議：**\n\n{advice}")
 
-          # 走勢圖表
+          # RSI 走勢圖
           st.markdown("---")
           st.markdown("**📊 近期 RSI 走勢圖**", unsafe_allow_html=True)
           rsi_chart_df = pd.DataFrame(
