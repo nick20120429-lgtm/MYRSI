@@ -3,11 +3,10 @@ import streamlit as st
 import yfinance as yf
 
 # 網頁標題
-st.title("📈 台股RSI查詢")
+st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
 st.write(
     "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、6239），"
     "點擊確定後將自動計算 5T 與 10T RSI，並顯示最新收盤價、本日最高、最低與價差。"
-   
 )
 
 # 簡易台股中文名稱對照字典（可自行擴充）
@@ -201,20 +200,4 @@ if submit_btn and stock_input:
           rsi_chart_df = pd.DataFrame(
               {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
           ).tail(30)
-          st.line_chart(rsi_chart_df)
-
-      except Exception as e:
-        st.error(f"讀取台股資料時發生錯誤：{e}")
-
-# 在頁面下方加入 RSI 核心概念備註說明區塊
-st.markdown("---")
-with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明"):
-  st.markdown("""
-    * **數值範圍**：介於 0 到 100 之間。
-    * **多空分水嶺（50）**：
-        * **RSI > 50**：代表買方力道較強（多方市場）。
-        * **RSI < 50**：代表賣方力道較強（空方市場）。
-    * **超買與超賣區間**：
-        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
-        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
-    """)
+          st.line_
