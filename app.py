@@ -2,19 +2,43 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
-# 網頁標題
-st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
+# 網頁標題與蠟筆小新圖片
+st.title("📈 蠟筆小新台股專用 RSI 智慧查詢與診斷工具")
+
+st.image(
+    "https://i.imgur.com/8Q9K1mz.png",
+    caption="動感超人小新陪你一起看盤！",
+    width=250,
+)
+
 st.write(
-    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 5347），"
+    "本工具**僅支援台灣股市**。請輸入台股代號或中文名稱（例如：2330、台積電、3231、緯創、5347），"
     "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
 )
+
+# 常見台股中文名稱對照字典（您可以隨時在這邊擴充更多喜歡的股票）
+stock_name_map = {
+    "台積電": "2330",
+    "緯創": "3231",
+    "鴻海": "2317",
+    "聯發科": "2454",
+    "廣達": "2382",
+    "長榮": "2603",
+    "聯電": "2303",
+    "微星": "2377",
+    "宏致": "3605",
+    "世界": "5347",
+    "台達電": "2308",
+}
 
 # 使用欄位排版讓輸入框跟按鈕並排
 col_input, col_btn = st.columns([3, 1])
 
 with col_input:
   stock_input = st.text_input(
-      "請輸入台股代號（例如 2330）：", value="2330", label_visibility="collapsed"
+      "請輸入台股代號或名稱（例如 台積電）：",
+      value="2330",
+      label_visibility="collapsed",
   )
 
 with col_btn:
@@ -23,10 +47,19 @@ with col_btn:
 
 if submit_btn and stock_input:
   raw_input = stock_input.strip()
-  stock_digits = "".join(filter(str.isdigit, raw_input))
+
+  # 判斷使用者輸入的是中文名稱還是數字代號
+  if raw_input in stock_name_map:
+    stock_digits = stock_name_map[raw_input]
+    st.info(f"偵測到您輸入【{raw_input}】，已自動對應至代號：{stock_digits}")
+  else:
+    # 如果不是字典裡的中文，就過濾出數字
+    stock_digits = "".join(filter(str.isdigit, raw_input))
 
   if not stock_digits:
-    st.error("請輸入正確的台股數字代號（例如：2330、3605）！")
+    st.error(
+        "請輸入正確的台股數字代號（例如：2330）或常見中文名稱（例如：台積電、緯創）！"
+    )
   else:
     symbols_to_try = [f"{stock_digits}.TW", f"{stock_digits}.TWO"]
     df = pd.DataFrame()
