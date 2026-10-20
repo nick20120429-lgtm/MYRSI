@@ -42,7 +42,7 @@ if submit_btn and stock_input:
         used_symbol = ""
 
         with st.spinner(
-            f"正在鎖定台股代號 {stock_digits} 抓取歷史數據並精準計算 RSI..."
+            f"正在鎖定台股代號 {stock_digits} 抓取歷史數據並精準計算 RSI 與訊號..."
         ):
             try:
                 for sym in symbols_to_try:
@@ -102,6 +102,8 @@ if submit_btn and stock_input:
                     latest_diff = latest_high - latest_low  # 計算最高與最低價差
                     latest_rsi_5 = float(df["RSI_5"].iloc[-1])
                     latest_rsi_10 = float(df["RSI_10"].iloc[-1])
+                    prev_rsi_5 = float(df["RSI_5"].iloc[-2])
+                    prev_rsi_10 = float(df["RSI_10"].iloc[-2])
 
                     comp_name = stock_name_dict.get(stock_digits, "台股公司")
 
@@ -136,25 +138,26 @@ if submit_btn and stock_input:
                         )
 
                     # ==========================
-                    # 🎯 犀利媽法則分析
+                    # 🎯 犀利媽法則分析與 RSI 狀態解析
                     # ==========================
                     st.markdown("---")
-                    st.subheader("🎯 犀利媽法則分析")
+                    st.subheader("🎯 犀利媽法則分析與市場狀態報告")
 
+                    # 燈號與評分判定邏輯
                     if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
                         light = "🔴 賣出燈"
                         score = 20
-                        conclusion = "市場極度過熱"
+                        conclusion = "市場極度過熱（鈍化風險高）"
                         action = "建議分批獲利了結"
                     elif latest_rsi_5 >= 70:
                         light = "🟠 警戒燈"
                         score = 40
-                        conclusion = "市場偏熱"
-                        action = "停止追價"
+                        conclusion = "市場偏熱（超買區）"
+                        action = "停止追價，留意回檔"
                     elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
                         light = "🟢 買進燈"
                         score = 95
-                        conclusion = "多頭攻擊型態"
+                        conclusion = "多頭攻擊型態（多方市場）"
                         action = "可考慮買進或加碼"
                     elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
                         light = "🟡 續抱燈"
@@ -164,58 +167,48 @@ if submit_btn and stock_input:
                     elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
                         light = "🔵 觀察燈"
                         score = 75
-                        conclusion = "超賣區"
-                        action = "觀察反彈機會"
+                        conclusion = "超賣區（市場過冷）"
+                        action = "觀察止跌反彈機會"
                     else:
                         light = "⚪ 觀望燈"
                         score = 50
-                        conclusion = "方向未明"
+                        conclusion = "區間整理（方向未明）"
                         action = "暫時觀望"
 
-                    # ===== 一眼看懂 =====
-                    col_a, col_b, col_c_status = st.columns(3)
-                    with col_a:
-                        st.metric("燈號", light)
-                    with col_b:
-                        st.metric("評分", f"{score}/100")
-                    with col_c_status:
-                        st.metric("建議", action)
-
-                    st.progress(score)
-
-                    # ===== 結論 =====
-                    if score >= 90:
-                        st.success(
-                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
-                            " -> ✅ 可考慮買進 / ✅ 可考慮加碼 / ✅ 持股續抱"
-                        )
-                    elif score >= 75:
-                        st.info(
-                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
-                            " -> ✅ 持股續抱 / ✅ 等待下一次訊號"
-                        )
-                    elif score >= 50:
-                        st.warning(
-                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
-                            " -> ⚠️ 建議觀望 / ⚠️ 等待方向確認"
-                        )
+                    # 1. 市場狀態分析判定
+                    if latest_rsi_5 >= 70 or latest_rsi_10 >= 70:
+                        market_state = "🔥 **市場過熱（超買區）**：RSI 進入高檔區，未來反轉向下機率高，需嚴防短線回檔。"
+                    elif latest_rsi_5 <= 30 or latest_rsi_10 <= 30:
+                        market_state = "❄️ **市場過冷（超賣區）**：RSI 進入低檔區，未來止跌回升機率高，可尋找低接契機。"
                     else:
-                        st.error(
-                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
-                            " -> ❌ 不建議追價 / ❌ 建議分批賣出 / ❌ 保留現金"
-                        )
+                        market_state = "⚖️ **區間整理 / 多空拉鋸**：RSI 處於 30~70 之間，多空無明顯極端偏向。"
 
-                    st.markdown("### 📌 操作建議")
-                    st.write(action)
+                    # 2. 交叉訊號判定
+                    cross_signal = "無明顯交叉"
+                    if prev_rsi_5 <= prev_rsi_10 and latest_rsi_5 > latest_rsi_10:
+                        cross_signal = "🟢 **黃金交叉（買進訊號）**：5日 RSI 向上突破 10日 RSI，短期上漲力道強於長期。"
+                    elif (
+                        prev_rsi_5 >= prev_rsi_10 and latest_rsi_5 < latest_rsi_10
+                    ):
+                        cross_signal = "🔴 **死亡交叉（賣出訊號）**：5日 RSI 向下跌破 10日 RSI，短期下跌力道強於長期。"
+                    else:
+                        if latest_rsi_5 > latest_rsi_10:
+                            cross_signal = (
+                                "📈 **多頭排列**：5T 持續位於 10T 之上。"
+                            )
+                        else:
+                            cross_signal = (
+                                "📉 **空頭排列**：5T 持續位於 10T 之下。"
+                            )
 
-                    # 顯示近期走勢圖表
-                    st.markdown("---")
-                    st.subheader("📊 近期 RSI 走勢圖")
-                    rsi_chart_df = pd.DataFrame(
-                        {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
-                    ).tail(30)
-                    st.line_chart(rsi_chart_df)
+                    # 3. 簡易背離與鈍化風險評估（自動偵測近期高低點對應）
+                    recent_close = close_prices.tail(10)
+                    recent_rsi = df["RSI_5"].tail(10)
+                    divergence_note = "目前未偵測到明顯強烈背離型態。"
 
-            except Exception as e:
-                st.error(f"讀取台股資料時發生錯誤：{e}")
-
+                    # 頂背離簡易判定：價格創新高但 RSI 創近期新低或走平
+                    if (
+                        recent_close.iloc[-1] >= recent_close.max() * 0.99
+                        and latest_rsi_5 < recent_rsi.quantile(0.5)
+                    ):
+                        divergence_note = "
