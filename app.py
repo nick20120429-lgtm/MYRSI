@@ -6,7 +6,7 @@ import yfinance as yf
 st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
 st.write(
     "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、6239），"
-    "點擊確定後將自動計算 5T 與 10T RSI，並顯示最新收盤價及本日最高、最低價。"
+    "點擊確定後將自動計算 5T 與 10T RSI，並顯示最新收盤價、本日最高、最低與價差。"
 )
 
 # 簡易台股中文名稱對照字典（可自行擴充）
@@ -89,22 +89,29 @@ if submit_btn and stock_input:
           latest_close = float(close_prices.iloc[-1])
           latest_high = float(high_prices.iloc[-1])
           latest_low = float(low_prices.iloc[-1])
+          latest_diff = latest_high - latest_low  # 計算最高與最低價差
           latest_rsi_5 = float(df["RSI_5"].iloc[-1])
           latest_rsi_10 = float(df["RSI_10"].iloc[-1])
 
           comp_name = stock_name_dict.get(stock_digits, "台股公司")
 
-          # 顯示自訂格式與最新收盤、最高、最低
+          # 顯示自訂格式與最新收盤
           st.success(
               f"{comp_name}【{used_symbol}】最新收盤價：{latest_close:.2f} 元"
           )
 
-          # 用 3 個欄位分別展示：本日最高、本日最低、最新收盤
-          col_h, col_l, col_c = st.columns(3)
+          # 用 4 個欄位分別展示：本日最高、本日最低、價差、最新收盤
+          col_h, col_l, col_diff, col_c = st.columns(4)
           with col_h:
             st.metric(label="🔺 本日最高", value=f"{latest_high:.2f}")
           with col_l:
             st.metric(label="🔻 本日最低", value=f"{latest_low:.2f}")
+          with col_diff:
+            st.metric(
+                label="📊 最高最低價差",
+                value=f"{latest_diff:.2f}",
+                delta=f"{(latest_diff / latest_low * 100):.2f}%",
+            )
           with col_c:
             st.metric(label="💵 最新收盤", value=f"{latest_close:.2f}")
 
