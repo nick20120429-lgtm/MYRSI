@@ -112,4 +112,73 @@ if submit_btn and stock_input:
                 value=f"{latest_diff:.2f}",
                 delta=f"{(latest_diff / latest_low * 100):.2f}%",
             )
-          with col_
+          with col_c:
+            st.metric(label="💵 最新收盤", value=f"{latest_close:.2f}")
+
+          col1, col2 = st.columns(2)
+          with col1:
+            st.metric(label="5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
+          with col2:
+            st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
+
+          # ==========================
+          # 🎯 犀利媽法則分析與 RSI 狀態解析
+          # ==========================
+          st.markdown("---")
+          st.subheader("🎯 犀利媽法則分析與 RSI 狀態解析")
+
+          # 燈號與評分判定邏輯
+          if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
+            light = "🔴 賣出燈"
+            score = 20
+            conclusion = "市場極度過熱"
+            action = "建議分批獲利了結"
+          elif latest_rsi_5 >= 70:
+            light = "🟠 警戒燈"
+            score = 40
+            conclusion = "市場偏熱"
+            action = "停止追價"
+          elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
+            light = "🟢 買進燈"
+            score = 95
+            conclusion = "多頭攻擊型態"
+            action = "可考慮買進或加碼"
+          elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
+            light = "🟡 續抱燈"
+            score = 80
+            conclusion = "多頭整理型態"
+            action = "持股續抱"
+          elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
+            light = "🔵 觀察燈"
+            score = 75
+            conclusion = "超賣區"
+            action = "觀察反彈機會"
+          else:
+            light = "⚪ 觀望燈"
+            score = 50
+            conclusion = "方向未明"
+            action = "暫時觀望"
+
+          # 動態帶出 5T 與 10T 的多空分水嶺與超買超賣解析
+          def get_rsi_status_text(rsi_val, name):
+            if rsi_val >= 90:
+              return f"🔥 **{name} ({rsi_val:.2f})**：進入 90+ 極度超買區（市場極度過熱，短線隨時有回檔風險，高檔可準備賣出）"
+            elif rsi_val >= 70:
+              return f"🟠 **{name} ({rsi_val:.2f})**：進入 ≥70 超買區（市場偏熱，短線追價需留意風險）"
+            elif rsi_val >= 50:
+              return f"🟢 **{name} ({rsi_val:.2f})**：大於 50 多空分水嶺（代表買方力道較強，處於**多方市場**）"
+            elif rsi_val >= 30:
+              return f"🟡 **{name} ({rsi_val:.2f})**：小於 50 分水嶺但未達超賣區（代表賣方力道較強，處於**空方市場**或盤整）"
+            else:
+              return f"🔵 **{name} ({rsi_val:.2f})**：小於等於 30 進入超賣區（市場過冷，短線有反彈或尋求買點機會）"
+
+          st.markdown("#### 📌 個股 RSI 深度解析：")
+          st.markdown(f"- {get_rsi_status_text(latest_rsi_5, '5日 RSI (5T)')}")
+          st.markdown(f"- {get_rsi_status_text(latest_rsi_10, '10日 RSI (10T)')}")
+
+          # ===== 一眼看懂 =====
+          st.markdown("---")
+          col_a, col_b, col_c_status = st.columns(3)
+          with col_a:
+            st.metric("燈號", light)
+          with col_b:
