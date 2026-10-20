@@ -238,6 +238,30 @@ if submit_btn and stock_input:
                 label="📊 本日振幅比例", value=f"{price_diff_pct:.2f}%"
             )
 
+          # 新增：仿玩股網之「當日即時走勢圖（分時走勢）」
+          st.markdown("---")
+          st.markdown(
+              "**📈 當日即時走勢圖 (Intraday)**", unsafe_allow_html=True
+          )
+          try:
+            # 抓取最近 1 天的 1 分鐘即時走勢資料
+            intraday_df = yf.download(
+                used_symbol, period="1d", interval="1m", progress=False
+            )
+            if not intraday_df.empty:
+              if isinstance(intraday_df.columns, pd.MultiIndex):
+                intra_close = intraday_df[("Close", used_symbol)]
+              else:
+                intra_close = intraday_df["Close"]
+              st.line_chart(intra_close, height=200)
+            else:
+              st.info(
+                  "目前非盤中交易時間或尚無當日分時資料，可參考下方日 RSI"
+                  " 走勢。"
+              )
+          except Exception:
+            st.info("無法載入即時分時走勢。")
+
           # RSI 數據呈現
           col_r1, col_r2 = st.columns(2)
           with col_r1:
@@ -303,7 +327,7 @@ if submit_btn and stock_input:
           rsi_chart_df = pd.DataFrame(
               {"RSI_5": rsi_5_series, "RSI_10": rsi_10_series}
           ).tail(30)
-          st.line_chart(rsi_chart_df, height=220)
+          st.line_chart(rsi_chart_df, height=200)
 
       except Exception as e:
         st.error(f"讀取台股資料時發生錯誤：{e}")
