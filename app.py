@@ -3,27 +3,18 @@ import streamlit as st
 import yfinance as yf
 
 # 網頁標題
-st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
+st.title("📈 RSI工具")
 st.write(
-    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、6239），"
-    "點擊確定後將自動計算 5T 與 10T RSI，並顯示最新收盤價、本日最高、最低與價差。"
+    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 5347），"
+    "點擊確定後將自動計算 5T 與 10T RSI 並對照犀利媽買賣策略提供燈號建議。"
 )
-
-# 簡易台股中文名稱對照字典（可自行擴充）
-stock_name_dict = {
-    "2330": "台積電",
-    "6239": "力成",
-    "2317": "鴻海",
-    "3605": "宏致",
-    "5347": "世界",
-}
 
 # 使用欄位排版讓輸入框跟按鈕並排
 col_input, col_btn = st.columns([3, 1])
 
 with col_input:
   stock_input = st.text_input(
-      "請輸入台股代號（例如 6239）：", value="6239", label_visibility="collapsed"
+      "請輸入台股代號（例如 2330）：", value="2330", label_visibility="collapsed"
   )
 
 with col_btn:
@@ -35,7 +26,7 @@ if submit_btn and stock_input:
   stock_digits = "".join(filter(str.isdigit, raw_input))
 
   if not stock_digits:
-    st.error("請輸入正確的台股數字代號（例如：2330、6239）！")
+    st.error("請輸入正確的台股數字代號（例如：2330、3605）！")
   else:
     symbols_to_try = [f"{stock_digits}.TW", f"{stock_digits}.TWO"]
     df = pd.DataFrame()
@@ -57,15 +48,10 @@ if submit_btn and stock_input:
               f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
           )
         else:
-          # 兼容不同 pandas 版本的欄位結構
           if isinstance(df.columns, pd.MultiIndex):
             close_prices = df[("Close", used_symbol)]
-            high_prices = df[("High", used_symbol)]
-            low_prices = df[("Low", used_symbol)]
           else:
             close_prices = df["Close"]
-            high_prices = df["High"]
-            low_prices = df["Low"]
 
 
           def calculate_rsi(data, window=14):
@@ -87,33 +73,12 @@ if submit_btn and stock_input:
           df["RSI_10"] = calculate_rsi(close_prices, window=10)
 
           latest_close = float(close_prices.iloc[-1])
-          latest_high = float(high_prices.iloc[-1])
-          latest_low = float(low_prices.iloc[-1])
-          latest_diff = latest_high - latest_low  # 計算最高與最低價差
           latest_rsi_5 = float(df["RSI_5"].iloc[-1])
           latest_rsi_10 = float(df["RSI_10"].iloc[-1])
 
-          comp_name = stock_name_dict.get(stock_digits, "台股公司")
-
-          # 顯示自訂格式與最新收盤
           st.success(
-              f"{comp_name}【{used_symbol}】最新收盤價：{latest_close:.2f} 元"
+              f"成功取得台股【{used_symbol}】最新收盤價：{latest_close:.2f} 元"
           )
-
-          # 用 4 個欄位分別展示：本日最高、本日最低、價差、最新收盤
-          col_h, col_l, col_diff, col_c = st.columns(4)
-          with col_h:
-            st.metric(label="🔺 本日最高", value=f"{latest_high:.2f}")
-          with col_l:
-            st.metric(label="🔻 本日最低", value=f"{latest_low:.2f}")
-          with col_diff:
-            st.metric(
-                label="📊 最高最低價差",
-                value=f"{latest_diff:.2f}",
-                delta=f"{(latest_diff / latest_low * 100):.2f}%",
-            )
-          with col_c:
-            st.metric(label="💵 最新收盤", value=f"{latest_close:.2f}")
 
           col1, col2 = st.columns(2)
           with col1:
@@ -159,12 +124,12 @@ if submit_btn and stock_input:
             action = "暫時觀望"
 
           # ===== 一眼看懂 =====
-          col_a, col_b, col_c_status = st.columns(3)
+          col_a, col_b, col_c = st.columns(3)
           with col_a:
             st.metric("燈號", light)
           with col_b:
             st.metric("評分", f"{score}/100")
-          with col_c_status:
+          with col_c:
             st.metric("建議", action)
 
           st.progress(score)
@@ -200,4 +165,20 @@ if submit_btn and stock_input:
           rsi_chart_df = pd.DataFrame(
               {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
           ).tail(30)
-          st.line_
+          st.line_chart(rsi_chart_df)
+
+      except Exception as e:
+        st.error(f"讀取台股資料時發生錯誤：{e}")
+
+# 在頁面下方加入 RSI 核心概念備註說明區塊
+st.markdown("---")
+with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明"):
+  st.markdown("""
+    * **數值範圍**：介於 0 到 100 之間。
+    * **多空分水嶺（50）**：
+        * **RSI > 50**：代表買方力道較強（多方市場）。
+        * **RSI < 50**：代表賣方力道較強（空方市場）。
+    * **超買與超賣區間**：
+        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
+        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
+    """)
