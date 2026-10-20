@@ -2,6 +2,11 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
+# 設定網頁版面為寬螢幕模式，讓手機自適應排版更好看
+st.set_page_config(
+    page_title="台股專用 RSI 智慧查詢與診斷工具", page_icon="📈", layout="centered"
+)
+
 # 網頁標題
 st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
 st.write(
@@ -9,28 +14,36 @@ st.write(
     "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
 )
 
-# 使用 CSS 放大輸入框、設定文字大小為 20px 並完美對齊按鈕
+# 使用 CSS 強化 RWD 自適應：放大手機上的輸入框、按鈕與文字，確保手機版清晰易點
 st.markdown(
     """
     <style>
-    /* 放大輸入框文字大小與高度 */
+    /* 放大輸入框的高度與文字大小，並確保寬度佔滿 */
     .stTextInput input {
         font-size: 20px !important;
-        height: 50px !important;
+        height: 55px !important;
     }
-    /* 調整「確定查詢」按鈕的高度與邊距，使其與放大後的輸入框完美對齊 */
+    
+    /* 放大查詢按鈕的字體與高度，並讓按鈕寬度自適應佔滿手機畫面 */
     .stButton > button {
-        margin-top: 28px;
-        height: 50px !important;
+        height: 55px !important;
         font-size: 18px !important;
         width: 100%;
+        margin-top: 5px;
+    }
+
+    /* 手機版響應式微調：螢幕較小時讓欄位自動上下排列，避免擠壓 */
+    @media (max-width: 640px) {
+        .stButton > button {
+            margin-top: 10px;
+        }
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# 使用欄位排版讓輸入框跟按鈕並排
+# 使用欄位排版（在手機上會自動轉為響應式上下堆疊，或在寬螢幕並排）
 col_input, col_btn = st.columns([3, 1])
 
 with col_input:
