@@ -3,9 +3,9 @@ import streamlit as st
 import yfinance as yf
 
 # 網頁標題
-st.title("📈 尼客范的_個股 RSI 自動查詢與診斷工具")
+st.title("📈 個股 RSI 自動查詢與診斷工具")
 st.write(
-    "輸入台股代號（例如：3605、2377 或 5347），點擊確定後系統將自動計算 5T 與"
+    "輸入台股代號（例如：2330、3605 或 5347），點擊確定後系統將自動計算 5T 與"
     " 10T RSI 並提供操作建議。"
 )
 
@@ -14,19 +14,16 @@ col_input, col_btn = st.columns([3, 1])
 
 with col_input:
   stock_input = st.text_input(
-      "請輸入台股代號（例如 3605 或 5347）：", value="3605", label_visibility="collapsed"
+      "請輸入台股代號（例如 2330）：", value="2330", label_visibility="collapsed"
   )
 
 with col_btn:
-  # 讓按鈕在畫面上有對齊感，上方加點空間或直接放按鈕
-  st.write("")  # 微調對齊
+  st.write("")
   submit_btn = st.button("確定查詢", type="primary")
 
-# 只有當使用者按下「確定查詢」按鈕時，才執行以下抓取與計算邏輯
 if submit_btn and stock_input:
   ticker = stock_input.strip()
 
-  # 如果使用者已經自己打上後綴，就直接用；沒打的話我們依序測試 .TW 與 .TWO
   if ticker.endswith(".TW") or ticker.endswith(".TWO"):
     symbols_to_try = [ticker]
   else:
@@ -35,11 +32,11 @@ if submit_btn and stock_input:
   df = pd.DataFrame()
   used_symbol = ""
 
-  with st.spinner(f"正在抓取 {ticker} 的最新數據並計算 RSI..."):
+  with st.spinner(f"正在抓取 {ticker} 的歷史數據並精準計算 RSI..."):
     try:
-      # 嘗試不同的後綴直到抓到資料為止
+      # 將期間拉長到 6 個月，確保有足夠的歷史資料計算 RSI
       for sym in symbols_to_try:
-        temp_df = yf.download(sym, period="2mo", interval="1d", progress=False)
+        temp_df = yf.download(sym, period="6mo", interval="1d", progress=False)
         if not temp_df.empty:
           df = temp_df
           used_symbol = sym
@@ -47,23 +44,32 @@ if submit_btn and stock_input:
 
       if df.empty:
         st.error(
-            "找不到該代號的資料，請確認代號是否正確（例如台股上市 3605、上櫃"
+            "找不到該代號的資料，請確認代號是否正確（例如台股上市 2330、上櫃"
             " 5347）。"
         )
       else:
-        # 處理 yfinance 多重索引欄位問題（確保抓到 Close）
+        # 處理 yfinance 多重索引欄位問題
         if isinstance(df.columns, pd.MultiIndex):
           close_prices = df[("Close", used_symbol)]
         else:
           close_prices = df["Close"]
 
 
-        # 計算 RSI 的函數
+        # 標準 Wilder RSI 計算函數（精準且不會出現 0）
         def calculate_rsi(data, window=14):
           delta = data.diff()
-          gain = delta.where(delta > 0, 0).rolling(window=window).mean()
-          loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
-          rs = gain / loss
+          gain = delta.clip(lower=0)
+          loss = -delta.clip(upper=0)
+
+          # 使用 Wilder's smoothing (ewm)
+          avg_gain = gain.ewm(
+              alpha=1 / window, min_periods=window, adjust=False
+          ).mean()
+          avg_loss = loss.ewm(
+              alpha=1 / window, min_periods=window, adjust=False
+          ).mean()
+
+          rs = avg_gain / avg_loss
           rsi = 100 - (100 / (1 + rs))
           return rsi
 
@@ -72,12 +78,11 @@ if submit_btn and stock_input:
         df["RSI_5"] = calculate_rsi(close_prices, window=5)
         df["RSI_10"] = calculate_rsi(close_prices, window=10)
 
-        # 取得最新一筆的數據
+        # 取得最新一筆有效數據
         latest_close = float(close_prices.iloc[-1])
         latest_rsi_5 = float(df["RSI_5"].iloc[-1])
         latest_rsi_10 = float(df["RSI_10"].iloc[-1])
 
-        # 顯示最新數據卡片
         st.success(f"成功取得【{used_symbol}】最新收盤價：{latest_close:.2f} 元")
 
         col1, col2 = st.columns(2)
