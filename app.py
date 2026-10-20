@@ -193,7 +193,8 @@ if submit_btn and stock_input:
           )
 
           st.markdown(
-              f"**【{used_symbol}】 即時行情與報價** <span style='color: #64748B; font-size: 12px;'>({last_date_str})</span>",
+              f"**【{used_symbol}】 即時行情與報價** <span style='color:"
+              f" #64748B; font-size: 12px;'>({last_date_str})</span>",
               unsafe_allow_html=True,
           )
 
@@ -239,28 +240,4 @@ if submit_btn and stock_input:
           with col_r1:
             st.metric(label="5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
           with col_r2:
-            st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
-
-          # 智慧診斷與買賣策略建議區塊
-          st.markdown("---")
-          st.markdown(
-              "**🤖 系統智慧診斷與買賣策略**", unsafe_allow_html=True
-          )
-
-          # 判定邏輯
-          if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
-            status_title = "🔴 極度過熱 / 高檔警戒區"
-            stars = "⭐"
-            advice = (
-                "5T 或 10T 來到 90 以上極高檔！符合「連續多日高檔、準備賣出」"
-                "的訊號特徵。短線過熱，強烈建議分批獲利了結、入袋為安！"
-            )
-          elif latest_rsi_5 > 70:
-            status_title = "🟠 短線過熱（超買區）"
-            stars = "⭐⭐"
-            advice = "短線漲幅過快，買氣過熱。若有持股可考慮適度調節，切勿盲目追高。"
-          elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
-            status_title = "🔴 短線超賣 / 弱勢"
-            stars = "⭐⭐"
-            advice = (
-                "短線跌幅較重進入超賣區。若中期指標（10T）也跟著崩跌，需注意停損；"
+            st.metric(label="10日
