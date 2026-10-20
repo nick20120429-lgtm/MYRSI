@@ -6,7 +6,7 @@ import yfinance as yf
 
 # 設定網頁標題與 RWD 寬螢幕自適應
 st.set_page_config(
-    page_title="犀利媽台股 RSI 智慧診斷工具", page_icon="📈", layout="centered"
+    page_title=" RSI 智慧診斷工具", page_icon="📈", layout="centered"
 )
 
 # 注入 Google 風格的極簡專業 UI 樣式
