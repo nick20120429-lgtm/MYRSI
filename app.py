@@ -1,9 +1,21 @@
+import os
 import pandas as pd
 import streamlit as st
 import yfinance as yf
 
-# 網頁標題與說明
-st.title("📈 RSI工具")
+# 頂部開發者資訊與圖片展示區塊
+col_img, col_header = st.columns([1, 4])
+
+with col_img:
+    # 預設載入與 app.py 同目錄下的 avatar.png
+    image_path = "avatar.png"
+    if os.path.exists(image_path):
+        st.image(image_path, width=110)
+
+with col_header:
+    st.markdown("**開發者：尼克范2026.10.20.V1**")
+    st.title("📈 RSI工具")
+
 st.write("本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、6239）：")
 st.write(
     "人生自強，先搞好自己： 犀利媽曾言：「沒有把自己的人生弄好，再會賺錢也沒有用。」 "
