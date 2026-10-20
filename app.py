@@ -9,54 +9,87 @@ st.set_page_config(
     page_title="犀利媽台股 RSI 智慧診斷工具", page_icon="📈", layout="centered"
 )
 
-# 注入專業級 UI 樣式（緊湊排版、減少空白、優化手機與桌機視覺）
+# 注入專業級 UI 樣式（精緻外框、柔和背景、專業金融儀表板風格）
 st.markdown(
     """
     <style>
+    /* 整體版面留白與背景微調 */
     .block-container {
-        padding-top: 1.2rem !important;
-        padding-bottom: 2rem !important;
+        padding-top: 1.5rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 750px;
     }
+    
+    /* 標題專業化 */
     h1 {
-        font-size: 22px !important;
+        font-size: 24px !important;
         font-weight: 700 !important;
-        color: #1E293B;
+        color: #0F172A;
+        letter-spacing: -0.5px;
         margin-bottom: 0px !important;
     }
+    
+    /* 輸入框美化 */
     .stTextInput input {
         font-size: 16px !important;
-        height: 40px !important;
-        border-radius: 6px !important;
+        height: 44px !important;
+        border-radius: 8px !important;
+        border: 1px solid #CBD5E1 !important;
     }
+    .stTextInput input:focus {
+        border-color: #2563EB !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+    }
+    
+    /* 查詢按鈕專業化 */
     .stButton > button {
-        height: 40px !important;
+        height: 44px !important;
         font-size: 15px !important;
         font-weight: 600 !important;
         width: 100%;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         background-color: #2563EB !important;
         color: white !important;
         border: none !important;
+        transition: all 0.2s ease-in-out;
     }
     .stButton > button:hover {
         background-color: #1D4ED8 !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
     }
+
+    /* 金融卡片式指標面板 (st.metric) */
     div[data-testid="stMetric"] {
-        background-color: #F8FAFC;
+        background: #FFFFFF;
         border: 1px solid #E2E8F0;
-        padding: 8px 12px;
-        border-radius: 8px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     }
     div[data-testid="stMetric"] label {
         font-size: 13px !important;
         color: #64748B !important;
+        font-weight: 500 !important;
     }
     div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        font-size: 20px !important;
+        font-size: 22px !important;
         font-weight: 700 !important;
+        color: #0F172A !important;
     }
+
+    /* 口訣與建議區塊風格優化 */
+    div.stInfo {
+        background-color: #F8FAFC !important;
+        border: 1px solid #CBD5E1 !important;
+        border-left: 5px solid #2563EB !important;
+        border-radius: 8px !important;
+        color: #1E293B !important;
+    }
+
+    /* 分隔線 */
     hr {
-        margin: 0.8em 0px !important;
+        margin: 1.2rem 0px !important;
+        border-color: #E2E8F0 !important;
     }
     </style>
     """,
@@ -72,8 +105,8 @@ current_time_str = now_taiwan.strftime("%H:%M")
 # 網頁標題與開發者署名
 st.title("📈 犀利媽台股 RSI 智慧診斷工具")
 st.markdown(
-    f"<p style='color: #64748B; font-size: 12px; margin-bottom: 2px;'>📅"
-    f" <b>日期：</b>{current_date_str} 🕒"
+    f"<p style='color: #64748B; font-size: 12px; margin-top: 4px;"
+    f" margin-bottom: 16px;'>📅 <b>日期：</b>{current_date_str} 🕒"
     f" <b>時間：</b>{current_time_str} | <span style='color: #2563EB;"
     " font-weight: 600;'>👨‍💻 尼克范 V.1.020</span></p>",
     unsafe_allow_html=True,
@@ -84,16 +117,16 @@ st.info(
     "💡 **犀利媽實戰口訣：**\n\n> *「5T 過熱先入袋，10T 守住多頭在；超跌見紅不急追，低接耐心等待來。」*"
 )
 
-st.markdown("---")
+st.markdown("")
 
-# 使用欄位排版讓輸入框跟按鈕並排（預設保持空白）
+# 使用欄位排版讓輸入框跟按鈕並排
 col_input, col_btn = st.columns([3, 1])
 
 with col_input:
   stock_input = st.text_input(
-      "請輸入台股代號（例如 2330、3605）：",
+      "請輸入台股代號：",
       value="",
-      placeholder="請輸入台股代號...",
+      placeholder="請輸入代號 (例如: 2330)",
       label_visibility="collapsed",
   )
 
@@ -105,14 +138,14 @@ if submit_btn and stock_input:
   stock_digits = "".join(filter(str.isdigit, raw_input))
 
   if not stock_digits:
-    st.error("請輸入正確的台股數字代號（例如：2330、3605）！")
+    st.error("⚠️ 請輸入正確的台股數字代號（例如：2330、3605）！")
   else:
     symbols_to_try = [f"{stock_digits}.TW", f"{stock_digits}.TWO"]
     df = pd.DataFrame()
     used_symbol = ""
 
     with st.spinner(
-        f"正在鎖定台股代號 {stock_digits} 抓取歷史數據並精準計算 RSI..."
+        f"🔍 正在鎖定台股代號 {stock_digits} 抓取歷史數據並精準計算 RSI..."
     ):
       try:
         for sym in symbols_to_try:
@@ -124,7 +157,7 @@ if submit_btn and stock_input:
 
         if df.empty:
           st.error(
-              f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
+              f"❌ 找不到台股代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
           )
         else:
           if isinstance(df.columns, pd.MultiIndex):
@@ -154,22 +187,31 @@ if submit_btn and stock_input:
           latest_close = float(close_prices.iloc[-1])
           latest_rsi_5 = float(df["RSI_5"].iloc[-1])
           latest_rsi_10 = float(df["RSI_10"].iloc[-1])
+          last_date_str = str(df.index[-1].strftime("%Y-%m-%d"))
 
-          st.success(
-              f"成功取得台股【{used_symbol}】最新收盤價：{latest_close:.2f} 元"
+          st.markdown("---")
+          st.markdown(
+              f"📌 **【{used_symbol}】 最新收盤價：**"
+              f" <span style='font-size: 18px; color: #2563EB; font-weight:"
+              f" 700;'>{latest_close:.2f} 元</span>"
+              f" <span style='color: #64748B; font-size:"
+              f" 12px;'>({last_date_str})</span>",
+              unsafe_allow_html=True,
           )
+          st.markdown("")
 
           col1, col2 = st.columns(2)
           with col1:
-            st.metric(label="5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
+            st.metric(label="📊 5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
           with col2:
-            st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
+            st.metric(label="📊 10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
 
-          # 結合圖片邏輯與多空判定的智慧診斷
+          # 智慧診斷與買賣策略
           st.markdown("---")
-          st.subheader("🤖 系統智慧診斷與買賣策略建議")
+          st.markdown(
+              "### 🤖 系統智慧診斷與買賣策略建議", unsafe_allow_html=True
+          )
 
-          # 判定邏輯
           history_tip = ""
           if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
             status_title = "🔴 **極度過熱 / 高檔警戒區**"
@@ -188,87 +230,3 @@ if submit_btn and stock_input:
             stars = "⭐⭐"
             symbol_icon = "🔥"
             advice = (
-                "短線漲幅過快，買氣過熱。若有持股可考慮適度調節，切勿盲目追高。"
-            )
-            history_tip = (
-                "💡 **犀利媽經驗談：** 5T 進入 70"
-                " 以上超買區時切忌急躁追高，多看少做或分批減碼為宜。"
-            )
-          elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
-            status_title = "🔴 **短線超賣 / 弱勢**"
-            stars = "⭐⭐"
-            symbol_icon = "🤒"
-            advice = (
-                "短線跌幅較重進入超賣區。若中期指標（10T）也跟著崩跌，需注意停損；"
-                "若 10T 仍有守，可觀察是否有打底機會。"
-            )
-            history_tip = (
-                "💡 **犀利媽經驗談：** 當 5T 跌破 30"
-                " 時往往伴隨恐慌殺盤，此時不宜盲目殺低，應觀察 10T"
-                " 是否能發揮防守支撐。"
-            )
-          elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
-            status_title = "🟡 **高檔技術性回檔 / 整理中**"
-            stars = "⭐⭐⭐"
-            symbol_icon = "🛡️"
-            advice = (
-                "短線買氣稍微降溫（5T < 50），但中期多頭防線（10T >= 50）仍穩固。"
-                "**建議：持股續抱，耐心等待短線止穩。**"
-            )
-            history_tip = (
-                "💡 **犀利媽經驗談：** 10T 保持在 50"
-                " 以上代表中多格局未破，短線拉回屬於技術性洗盤，不用過度恐慌。"
-            )
-          elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
-            status_title = "🟢 **短線轉強 / 多頭買入訊號**"
-            stars = "⭐⭐⭐⭐⭐"
-            symbol_icon = "🚀"
-            advice = (
-                "短天期動能大於中天期，且雙雙站在 50"
-                " 中軸之上，短線買氣回溫，多方佔優勢！"
-                "**建議：可考慮進場或加碼。**"
-            )
-            history_tip = (
-                "💡 **犀利媽經驗談：** 雙指標站在 50"
-                " 之上且短天期向上翻揚，為標準的多頭攻擊盤，可順勢關注。"
-            )
-          else:
-            status_title = "⚪ **多空拉鋸 / 盤整格局**"
-            stars = "⭐⭐⭐"
-            symbol_icon = "⚖️"
-            advice = (
-                "目前數值顯示多空力道均衡，建議觀望，等待方向明確再行操作。"
-            )
-            history_tip = (
-                "💡 **犀利媽經驗談：** 盤整盤多看少做，等待突破訊號再出手勝率更高。"
-            )
-
-          st.markdown(f"**目前狀態：** {status_title} {symbol_icon}")
-          st.markdown(f"**操作推薦指數：** {stars}")
-          st.info(f"**買賣策略建議：**\n\n{advice}\n\n{history_tip}")
-
-          # 顯示近期走勢圖表
-          st.markdown("---")
-          st.subheader("📊 近期 RSI 走勢圖")
-          rsi_chart_df = pd.DataFrame(
-              {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
-          ).tail(30)
-          st.line_chart(rsi_chart_df, height=200)
-
-      except Exception as e:
-        st.error(f"讀取台股資料時發生錯誤：{e}")
-
-# 在頁面下方加入 RSI 核心概念備註說明區塊
-st.markdown("---")
-with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明"):
-  st.markdown(
-      """
-    * **數值範圍**：介於 0 到 100 之間。
-    * **多空分水嶺（50）**：
-        * **RSI > 50**：代表買方力道較強（多方市場）。
-        * **RSI < 50**：代表賣方力道較強（空方市場）。
-    * **超買與超賣區間**：
-        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
-        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
-    """
-  )
