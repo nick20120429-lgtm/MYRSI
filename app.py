@@ -2,15 +2,8 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
-# 網頁標題與蠟筆小新圖片
-st.title("📈 蠟筆小新台股專用 RSI 智慧查詢與診斷工具")
-
-st.image(
-    "https://i.imgur.com/8Q9K1mz.png",
-    caption="動感超人小新陪你一起看盤！",
-    width=250,
-)
-
+# 網頁標題
+st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
 st.write(
     "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 5347），"
     "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
