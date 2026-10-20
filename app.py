@@ -21,7 +21,7 @@ st.markdown(
     /* 放大輸入框的高度與文字大小，並確保寬度佔滿 */
     .stTextInput input {
         font-size: 60px !important;
-        height: 100px !important;
+        height: 120px !important;
     }
     
     /* 放大查詢按鈕的字體與高度，並讓按鈕寬度自適應佔滿手機畫面 */
