@@ -1,4 +1,3 @@
-import feedparser
 import pandas as pd
 import streamlit as st
 import yfinance as yf
@@ -223,22 +222,6 @@ if submit_btn and stock_input:
 
       except Exception as e:
         st.error(f"讀取台股資料時發生錯誤：{e}")
-
-# 底部新聞概要區塊（經濟日報即時產經新聞）
-st.markdown("---")
-st.subheader("📰 經濟日報 - 即時產經新聞概要")
-
-try:
-  feed_url = "https://money.udn.com/rssfeed/news/1001/5591/5591?ch=mm"
-  news_feed = feedparser.parse(feed_url)
-
-  if news_feed.entries:
-    for entry in news_feed.entries[:5]:
-      st.markdown(f"• [{entry.title}]({entry.link})")
-  else:
-    st.info("目前無法取得即時新聞，請稍後再試。")
-except Exception:
-  st.info("目前新聞資訊連線中...")
 
 # 底部可折疊的 RSI 觀念備註
 st.markdown("---")
