@@ -6,7 +6,7 @@ import yfinance as yf
 
 # 設定網頁標題與 RWD 寬螢幕自適應
 st.set_page_config(
-    page_title=" RSI 智慧診斷工具", page_icon="📈", layout="centered"
+    page_title="台股 RSI 智慧診斷工具", page_icon="📈", layout="centered"
 )
 
 # 注入 Google 風格的極簡專業 UI 樣式
@@ -32,7 +32,7 @@ st.markdown(
         border-radius: 24px !important;
         border: 1px solid #dfe1e5 !important;
         padding-left: 20px !important;
-        box-shadow: 0 1px 6px rgba(32,33,36,Index=0.05);
+        box-shadow: 0 1px 6px rgba(32,33,36,0.05);
     }
     .stTextInput input:focus {
         border-color: rgba(223,225,229,0) !important;
@@ -100,7 +100,7 @@ current_time_str = now_taiwan.strftime("%H:%M")
 st.markdown(
     "<div style='text-align: center; margin-bottom: 20px;'>"
     "<h2 style='font-weight: 700; color: #202124; margin-bottom: 5px;'>📈"
-    " 犀利媽台股 RSI 智慧診斷</h2>"
+    " 台股 RSI 智慧診斷工具</h2>"
     f"<p style='color: #70757a; font-size: 12px;'>📅 <b>日期：</b>{current_date_str}"
     f" 🕒 <b>時間：</b>{current_time_str} | <span style='color: #4285F4;"
     " font-weight: 600;'>👨‍💻 尼克范 V.1.0.2.0</span></p>"
@@ -108,9 +108,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 🚀 犀利媽主頁固定口訣醒目看板
+# 固定實戰口訣看板
 st.info(
-    "💡 **犀利媽實戰口訣：**\n\n> *「5T 過熱先入袋，10T 守住多頭在；超跌見紅不急追，低接耐心等待來。」*"
+    "💡 **實戰口訣：**\n\n> *「5T 過熱先入袋，10T 守住多頭在；超跌見紅不急追，低接耐心等待來。」*"
 )
 
 st.markdown("")
@@ -202,7 +202,7 @@ if submit_btn and stock_input:
           with col2:
             st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
 
-          # 結合圖片邏輯與多空判定的智慧診斷
+          # 系統智慧診斷與買賣策略建議
           st.markdown("---")
           st.subheader("🤖 系統智慧診斷與買賣策略建議")
 
@@ -212,61 +212,4 @@ if submit_btn and stock_input:
             stars = "⭐"
             symbol_icon = "🚨"
             advice = (
-                "5T 或 10T 來到 90 以上極高檔！符合「連續多日高檔、準備賣出」"
-                "的訊號特徵。短線過熱，強烈建議分批獲利了結、入袋為安！"
-            )
-          elif latest_rsi_5 > 70:
-            status_title = "🟠 **短線過熱（超買區）**"
-            stars = "⭐⭐"
-            symbol_icon = "🔥"
-            advice = (
-                "短線漲幅過快，買氣過熱。若有持股可考慮適度調節，切勿盲目追高。"
-            )
-          elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
-            status_title = "🔴 **短線超賣 / 弱勢**"
-            stars = "⭐⭐"
-            symbol_icon = "🤒"
-            advice = (
-                "短線跌幅較重進入超賣區。若中期指標（10T）也跟著崩跌，需注意停損；"
-                "若 10T 仍有守，可觀察是否有打底機會。"
-            )
-          elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
-            status_title = "🟡 **高檔技術性回檔 / 整理中**"
-            stars = "⭐⭐⭐"
-            symbol_icon = "🛡️"
-            advice = (
-                "短線買氣稍微降溫（5T < 50），但中期多頭防線（10T >= 50）仍穩固。"
-                "**建議：持股續抱，耐心等待短線止穩。**"
-            )
-          elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
-            status_title = "🟢 **短線轉強 / 多頭買入訊號**"
-            stars = "⭐⭐⭐⭐⭐"
-            symbol_icon = "🚀"
-            advice = (
-                "短天期動能大於中天期，且雙雙站在 50 中軸之上，短線買氣回溫，多方佔優勢！"
-                "**建議：可考慮進場或加碼。**"
-            )
-          else:
-            status_title = "⚪ **多空拉鋸 / 盤整格局**"
-            stars = "⭐⭐⭐"
-            symbol_icon = "⚖️"
-            advice = (
-                "目前數值顯示多空力道均衡，建議觀望，等待方向明確再行操作。"
-            )
-
-          st.markdown(f"**目前狀態：** {status_title} {symbol_icon}")
-          st.markdown(f"**操作推薦指數：** {stars}")
-          st.markdown(f"**買賣策略建議：** {advice}")
-
-          # 顯示近期走勢圖表
-          st.markdown("---")
-          st.subheader("📊 近期 RSI 走勢圖")
-          rsi_chart_df = pd.DataFrame(
-              {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
-          ).tail(30)
-          st.line_chart(rsi_chart_df, height=220)
-
-      except Exception as e:
-        st.error(f"讀取台股資料時發生錯誤：{e}")
-
-# 在頁面下方加入
+                "5T 或 10T 來到 90 以上極高檔！符合「連續多日高檔、準備賣出
