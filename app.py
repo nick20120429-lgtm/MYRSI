@@ -3,16 +3,27 @@ import streamlit as st
 import yfinance as yf
 
 # 網頁標題
-st.title("📈 個股 RSI 自動查詢與診斷工具")
+st.title("📈 尼客范的_個股 RSI 自動查詢與診斷工具")
 st.write(
-    "輸入台股代號（例如：3605、2377 或 5347），系統將自動計算 5T 與 10T"
-    " RSI 並提供操作建議。"
+    "輸入台股代號（例如：3605、2377 或 5347），點擊確定後系統將自動計算 5T 與"
+    " 10T RSI 並提供操作建議。"
 )
 
-# 使用者輸入股票代號
-stock_input = st.text_input("請輸入台股代號（例如 3605 或 5347）：", value="3605")
+# 使用欄位排版讓輸入框跟按鈕並排
+col_input, col_btn = st.columns([3, 1])
 
-if stock_input:
+with col_input:
+  stock_input = st.text_input(
+      "請輸入台股代號（例如 3605 或 5347）：", value="3605", label_visibility="collapsed"
+  )
+
+with col_btn:
+  # 讓按鈕在畫面上有對齊感，上方加點空間或直接放按鈕
+  st.write("")  # 微調對齊
+  submit_btn = st.button("確定查詢", type="primary")
+
+# 只有當使用者按下「確定查詢」按鈕時，才執行以下抓取與計算邏輯
+if submit_btn and stock_input:
   ticker = stock_input.strip()
 
   # 如果使用者已經自己打上後綴，就直接用；沒打的話我們依序測試 .TW 與 .TWO
