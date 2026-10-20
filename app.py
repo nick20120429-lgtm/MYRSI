@@ -9,49 +9,55 @@ st.set_page_config(
     page_title="犀利媽台股 RSI 智慧診斷工具", page_icon="📈", layout="centered"
 )
 
-# 注入專業級 UI 樣式（排版整齊劃一、間距與區塊優化）
+# 注入 Google 風格的極簡專業 UI 樣式
 st.markdown(
     """
     <style>
-    /* 整體區塊最大寬度與上下留白控制 */
+    /* 整體區塊置中與寬度控制，營造 Google 搜尋首頁感 */
     .block-container {
-        padding-top: 1.5rem !important;
+        padding-top: 2rem !important;
         padding-bottom: 3rem !important;
-        max-width: 720px;
+        max-width: 650px;
     }
     
-    /* 標題統一樣式 */
+    /* 隱藏預設標題邊距 */
     h1 {
-        font-size: 22px !important;
-        font-weight: 700 !important;
-        color: #0F172A;
-        margin-bottom: 0px !important;
+        display: none;
     }
     
-    /* 輸入框高度與圓角一致化 */
+    /* 輸入框高度與圓角（Google 搜尋框風格） */
     .stTextInput input {
         font-size: 16px !important;
-        height: 42px !important;
-        border-radius: 6px !important;
-        border: 1px solid #CBD5E1 !important;
+        height: 48px !important;
+        border-radius: 24px !important;
+        border: 1px solid #dfe1e5 !important;
+        padding-left: 20px !important;
+        box-shadow: 0 1px 6px rgba(32,33,36,Index=0.05);
+    }
+    .stTextInput input:focus {
+        border-color: rgba(223,225,229,0) !important;
+        box-shadow: 0 1px 6px rgba(32,33,36,0.28) !important;
     }
     
-    /* 按鈕高度與對齊一致化 */
+    /* 查詢按鈕風格（Google 搜尋按鈕感） */
     .stButton > button {
         height: 42px !important;
-        font-size: 15px !important;
-        font-weight: 600 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
         width: 100%;
-        border-radius: 6px !important;
-        background-color: #2563EB !important;
-        color: white !important;
-        border: none !important;
+        border-radius: 20px !important;
+        background-color: #f8f9fa !important;
+        color: #3c4043 !important;
+        border: 1px solid #f8f9fa !important;
+        box-shadow: 0 1px 1px rgba(0,0,0,0.1);
     }
     .stButton > button:hover {
-        background-color: #1D4ED8 !important;
+        background-color: #f1f3f4 !important;
+        border: 1px solid #dadce0 !important;
+        color: #202124 !important;
     }
 
-    /* 指標面板 (st.metric) 外觀整齊劃一 */
+    /* 指標面板 (st.metric) 外觀 */
     div[data-testid="stMetric"] {
         background-color: #F8FAFC;
         border: 1px solid #E2E8F0;
@@ -68,15 +74,15 @@ st.markdown(
         color: #0F172A !important;
     }
 
-    /* 資訊提示框與分隔線間距微調 */
+    /* 資訊提示框與分隔線 */
     div.stInfo {
         background-color: #F8FAFC !important;
         border: 1px solid #E2E8F0 !important;
-        border-left: 4px solid #2563EB !important;
-        border-radius: 6px !important;
+        border-left: 4px solid #4285F4 !important;
+        border-radius: 8px !important;
     }
     hr {
-        margin: 1rem 0px !important;
+        margin: 1.2rem 0px !important;
         border-color: #E2E8F0 !important;
     }
     </style>
@@ -90,13 +96,15 @@ now_taiwan = datetime.now(tz_taiwan)
 current_date_str = now_taiwan.strftime("%Y/%m/%d")
 current_time_str = now_taiwan.strftime("%H:%M")
 
-# 網頁標題與開發者署名
-st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
+# --- Google 風格精簡 Header ---
 st.markdown(
-    f"<p style='color: #64748B; font-size: 12px; margin-top: 4px;"
-    f" margin-bottom: 12px;'>📅 <b>日期：</b>{current_date_str} 🕒"
-    f" <b>時間：</b>{current_time_str} | <span style='color: #2563EB;"
-    " font-weight: 600;'>👨‍💻 尼克范 V.1.0.2.0</span></p>",
+    "<div style='text-align: center; margin-bottom: 20px;'>"
+    "<h2 style='font-weight: 700; color: #202124; margin-bottom: 5px;'>📈"
+    " 犀利媽台股 RSI 智慧診斷</h2>"
+    f"<p style='color: #70757a; font-size: 12px;'>📅 <b>日期：</b>{current_date_str}"
+    f" 🕒 <b>時間：</b>{current_time_str} | <span style='color: #4285F4;"
+    " font-weight: 600;'>👨‍💻 尼克范 V.1.0.2.0</span></p>"
+    "</div>",
     unsafe_allow_html=True,
 )
 
@@ -105,22 +113,29 @@ st.info(
     "💡 **犀利媽實戰口訣：**\n\n> *「5T 過熱先入袋，10T 守住多頭在；超跌見紅不急追，低接耐心等待來。」*"
 )
 
-st.write(
-    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 5347），"
-    "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
-)
+st.markdown("")
 
-# 使用欄位排版讓輸入框跟按鈕並排
-col_input, col_btn = st.columns([3, 1])
+# Google 風格置中簡潔輸入與查詢區
+col_spacer1, col_input, col_btn, col_spacer2 = st.columns([0.5, 3, 1.2, 0.5])
+
+with col_spacer1:
+  st.empty()
 
 with col_input:
   stock_input = st.text_input(
-      "請輸入台股代號（例如 2330）：", value="2330", label_visibility="collapsed"
+      "台股代號",
+      value="2330",
+      placeholder="輸入代號 (例如 2330)",
+      label_visibility="collapsed",
   )
 
 with col_btn:
-  st.write("")
-  submit_btn = st.button("確定查詢", type="primary")
+  submit_btn = st.button("台股搜尋", type="primary")
+
+with col_spacer2:
+  st.empty()
+
+st.markdown("")
 
 if submit_btn and stock_input:
   raw_input = stock_input.strip()
@@ -254,15 +269,4 @@ if submit_btn and stock_input:
       except Exception as e:
         st.error(f"讀取台股資料時發生錯誤：{e}")
 
-# 在頁面下方加入 RSI 核心概念備註說明區塊
-st.markdown("---")
-with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明"):
-  st.markdown(
-      "* **數值範圍**：介於 0 到 100 之間。\n"
-      "* **多空分水嶺（50）**：\n"
-      "    * **RSI > 50**：代表買方力道較強（多方市場）。\n"
-      "    * **RSI < 50**：代表賣方力道較強（空方市場）。\n"
-      "* **超買與超賣區間**：\n"
-      "    * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。\n"
-      "    * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。"
-  )
+# 在頁面下方加入
