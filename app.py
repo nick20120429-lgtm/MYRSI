@@ -9,7 +9,7 @@ st.set_page_config(
     page_title="台股 RSI 智慧診斷工具", page_icon="📈", layout="centered"
 )
 
-# 注入自訂樣式：讓輸入框與查詢按鈕高度同為 40px 等高對齊
+# 注入自訂樣式：輸入框與查詢按鈕高度同為 40px 等高對齊
 st.markdown(
     """
     <style>
@@ -67,8 +67,8 @@ st.info(
 )
 
 st.write(
-    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 5347），"
-    "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
+    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3605 或 2377），"
+    "點擊確定後將自動計算 5T 與 10T RSI 並對照口訣提供白話解析與操作建議。"
 )
 
 # 使用欄位排版讓輸入框跟按鈕並排
@@ -143,4 +143,78 @@ if submit_btn and stock_input:
 
           col1, col2 = st.columns(2)
           with col1:
-            st.metric(label="5
+            st.metric(label="5日 RSI (5T)", value=f"{latest_rsi_5:.2f}")
+          with col2:
+            st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
+
+          # 口訣解讀邏輯判定與白話對照輸出
+          st.markdown("---")
+          st.subheader("🤖 依口訣邏輯進行的系統智慧診斷與操作建議")
+
+          if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
+            status_title = "🔴 **極度過熱 / 高檔警戒區**"
+            stars = "⭐"
+            symbol_icon = "🚨"
+            meaning = "短線過熱，買氣來到極高檔，追價意願易竭盡。"
+            action = "分批獲利了結、入袋為安！"
+          elif latest_rsi_5 > 70:
+            status_title = "🟠 **短線過熱（超買區）**"
+            stars = "⭐⭐"
+            symbol_icon = "🔥"
+            meaning = "短線漲幅過快，買氣過熱。"
+            action = "適度調節，切勿盲目追高。"
+          elif latest_rsi_5 < 50 and latest_rsi_10 < 50:
+            status_title = "🔴 **跌破 10T（趨勢轉空）**"
+            stars = "⭐⭐"
+            symbol_icon = "🛑"
+            meaning = (
+                "跌破 10T ➔ 代表趨勢轉空、防線失守，過去一段時間的多頭結構遭到破壞。"
+            )
+            action = "全數停損離場 / 加碼放空"
+          elif latest_rsi_5 < 50 and latest_rsi_10 >= 50:
+            status_title = "🟡 **跌破 5T（攻勢受阻）**"
+            stars = "⭐⭐⭐"
+            symbol_icon = "⚠️"
+            meaning = (
+                "跌破 5T ➔ 代表短線攻勢受阻、出現轉弱警訊（但 10T 中期防線尚存）。"
+            )
+            action = "減碼停利 / 試探性建立空單"
+          elif latest_rsi_5 >= 50 and latest_rsi_10 >= 50:
+            status_title = "🟢 **站上 5T（極強勢攻擊）**"
+            stars = "⭐⭐⭐⭐⭐"
+            symbol_icon = "🚀"
+            meaning = "站上 5T ➔ 代表短線動能強勁，為極強勢攻擊盤面！"
+            action = "短線買進 / 多單續抱"
+          else:
+            status_title = "⚪ **多空拉鋸 / 盤整格局**"
+            stars = "⭐⭐⭐"
+            symbol_icon = "⚖️"
+            meaning = "目前數值顯示多空力道均衡，方向尚未明確。"
+            action = "建議觀望，等待突破再行操作。"
+
+          st.markdown(f"**目前狀態：** {status_title} {symbol_icon}")
+          st.markdown(f"**操作推薦指數：** {stars}")
+          st.markdown(f"**📊 股價與均線關係代表意義：** {meaning}")
+          st.markdown(f"**🎯 犀利媽的操作動作：** **{action}**")
+
+          # 顯示近期走勢圖表
+          st.markdown("---")
+          st.subheader("📊 近期 RSI 走勢圖")
+          rsi_chart_df = pd.DataFrame(
+              {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
+          ).tail(30)
+          st.line_chart(rsi_chart_df)
+
+      except Exception as e:
+        st.error(f"讀取台股資料時發生錯誤：{e}")
+
+# 在頁面下方加入 RSI 核心概念備註說明區塊
+st.markdown("---")
+with st.expander("📖 點擊展開：RSI 的核心概念與口訣對照說明"):
+  st.markdown("""
+    * **數值範圍**：介於 0 到 100 之間，50 為多空分水嶺。
+    * **口訣對照表**：
+        * **站上 5T（RSI 5 > 50）**：極強勢攻擊 ➔ **短線買進 / 多單續抱**。
+        * **跌破 5T（RSI 5 < 50）**：攻勢受阻、轉弱警訊 ➔ **減碼停利 / 試探性建立空單**。
+        * **跌破 10T（RSI 10 < 50）**：趨勢轉空、防線失守 ➔ **全數停損離場 / 加碼放空**。
+    """)
