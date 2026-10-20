@@ -5,8 +5,7 @@ import yfinance as yf
 # 網頁標題
 st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
 st.write(
-    "本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、6239），"
-    "點擊確定後將自動計算 5T 與 10T RSI，並顯示最新收盤價、本日最高、最低、價差與詳細 RSI 狀態解析。"
+    "核心邏輯： 一個禮拜營業天數就是 5 天，用「一個星期（5日）」與「兩個星期（10日）」來衡量短線過熱或超跌的節奏"
 )
 
 # 簡易台股中文名稱對照字典（可自行擴充）
@@ -152,92 +151,4 @@ if submit_btn and stock_input:
                         score = 40
                         conclusion = "市場偏熱"
                         action = "停止追價"
-                    elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
-                        light = "🟢 買進燈"
-                        score = 95
-                        conclusion = "多頭攻擊型態"
-                        action = "可考慮買進或加碼"
-                    elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
-                        light = "🟡 續抱燈"
-                        score = 80
-                        conclusion = "多頭整理型態"
-                        action = "持股續抱"
-                    elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
-                        light = "🔵 觀察燈"
-                        score = 75
-                        conclusion = "超賣區"
-                        action = "觀察反彈機會"
-                    else:
-                        light = "⚪ 觀望燈"
-                        score = 50
-                        conclusion = "方向未明"
-                        action = "暫時觀望"
-
-                    # 動態帶出 5T 與 10T 的多空分水嶺與超買超賣解析
-                    def get_rsi_status_text(rsi_val, name):
-                        if rsi_val >= 90:
-                            return f"🔥 **{name} ({rsi_val:.2f})**：進入 90+ 極度超買區（市場極度過熱，短線隨時有回檔風險，高檔可準備賣出）"
-                        elif rsi_val >= 70:
-                            return f"🟠 **{name} ({rsi_val:.2f})**：進入 ≥70 超買區（市場偏熱，短線追價需留意風險）"
-                        elif rsi_val >= 50:
-                            return f"🟢 **{name} ({rsi_val:.2f})**：大於 50 多空分水嶺（代表買方力道較強，處於**多方市場**）"
-                        elif rsi_val >= 30:
-                            return f"🟡 **{name} ({rsi_val:.2f})**：小於 50 分水嶺但未達超賣區（代表賣方力道較強，處於**空方市場**或盤整）"
-                        else:
-                            return f"🔵 **{name} ({rsi_val:.2f})**：小於等於 30 進入超賣區（市場過冷，短線有反彈或尋求買點機會）"
-
-                    st.markdown("#### 📌 個股 RSI 深度解析：")
-                    st.markdown(
-                        f"- {get_rsi_status_text(latest_rsi_5, '5日 RSI (5T)')}"
-                    )
-                    st.markdown(
-                        f"- {get_rsi_status_text(latest_rsi_10, '10日 RSI (10T)')}"
-                    )
-
-                    # ===== 一眼看懂 =====
-                    st.markdown("---")
-                    col_a, col_b, col_c_status = st.columns(3)
-                    with col_a:
-                        st.metric("燈號", light)
-                    with col_b:
-                        st.metric("評分", f"{score}/100")
-                    with col_c_status:
-                        st.metric("建議", action)
-
-                    st.progress(score)
-
-                    # ===== 結論 =====
-                    if score >= 90:
-                        st.success(
-                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
-                            " -> ✅ 可考慮買進 / ✅ 可考慮加碼 / ✅ 持股續抱"
-                        )
-                    elif score >= 75:
-                        st.info(
-                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
-                            " -> ✅ 持股續抱 / ✅ 等待下一次訊號"
-                        )
-                    elif score >= 50:
-                        st.warning(
-                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
-                            " -> ⚠️ 建議觀望 / ⚠️ 等待方向確認"
-                        )
-                    else:
-                        st.error(
-                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
-                            " -> ❌ 不建議追價 / ❌ 建議分批賣出 / ❌ 保留現金"
-                        )
-
-                    st.markdown("### 📌 操作建議")
-                    st.write(action)
-
-                    # 顯示近期走勢圖表
-                    st.markdown("---")
-                    st.subheader("📊 近期 RSI 走勢圖")
-                    rsi_chart_df = pd.DataFrame(
-                        {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
-                    ).tail(30)
-                    st.line_chart(rsi_chart_df)
-
-            except Exception as e:
-                st.error(f"讀取台股資料時發生錯誤：{e}")
+                    elif latest_rsi_5 > latest_rsi_10 and latest_
