@@ -262,3 +262,70 @@ if submit_btn or selected_fav:
           stars = "⭐⭐"
           advice = (
               "短線跌幅較重進入超賣區。若中期指標（10T）也跟著崩跌，需注意停損；"
+              "若 10T 仍有守，可觀察是否有打底機會。"
+          )
+          history_tip = (
+              "💡 **犀利媽經驗談：** 當 5T 跌破 30"
+              " 時往往伴隨恐慌殺盤，此時不宜盲目殺低，應觀察 10T"
+              " 是否能發揮防守支撐。"
+          )
+        elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
+          status_title = "🟡 高檔技術性回檔 / 整理中"
+          stars = "⭐⭐⭐"
+          advice = (
+              "短線買氣稍微降溫（5T < 50），但中期多頭防線（10T >= 50）仍穩固。"
+              "**建議：持股續抱，耐心等待短線止穩。**"
+          )
+          history_tip = (
+              "💡 **犀利媽經驗談：** 10T 保持在 50"
+              " 以上代表中多格局未破，短線拉回屬於技術性洗盤，不用過度恐慌。"
+          )
+        elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
+          status_title = "🟢 短線轉強 / 多頭買入訊號"
+          stars = "⭐⭐⭐⭐⭐"
+          advice = (
+              "短天期動能大於中天期，且雙雙站在 50"
+              " 中軸之上，短線買氣回溫，多方佔優勢！"
+              "**建議：可考慮進場或加碼。**"
+          )
+          history_tip = (
+              "💡 **犀利媽經驗談：** 雙指標站在 50"
+              " 之上且短天期向上翻揚，為標準的多頭攻擊盤，可順勢關注。"
+          )
+        else:
+          status_title = "⚪ 多空拉鋸 / 盤整格局"
+          stars = "⭐⭐⭐"
+          advice = (
+              "目前數值顯示多空力道均衡，建議觀望，等待方向明確再行操作。"
+          )
+          history_tip = (
+              "💡 **犀利媽經驗談：** 盤整盤多看少做，等待突破訊號再出手勝率更高。"
+          )
+
+        st.markdown(f"**目前狀態：** {status_title}")
+        st.markdown(f"**操作推薦指數：** {stars}")
+        st.info(f"**買賣策略建議：**\n\n{advice}\n\n{history_tip}")
+
+        st.markdown("---")
+        st.markdown("**📊 近期 RSI 走勢圖**", unsafe_allow_html=True)
+        rsi_chart_df = pd.DataFrame(
+            {"RSI_5": rsi_5_series, "RSI_10": rsi_10_series}
+        ).tail(30)
+        st.line_chart(rsi_chart_df, height=200)
+
+    except Exception as e:
+      st.error(f"讀取台股資料時發生錯誤：{e}")
+
+st.markdown("---")
+with st.expander("📖 點擊展開：犀利媽 RSI 核心觀念與數值範圍說明"):
+  st.markdown(
+      """
+    * **數值範圍**：介於 0 到 100 之間。
+    * **多空分水嶺（50）**：
+        * **RSI > 50**：代表買方力道較強（多方市場）。
+        * **RSI < 50**：代表賣方力道較強（空方市場）。
+    * **超買與超賣區間**：
+        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
+        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
+    """
+  )
