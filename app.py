@@ -47,7 +47,7 @@ if stock_input:
           close_prices = df["Close"]
 
 
-        # 2. 計算 RSI 的函數
+        # 計算 RSI 的函數
         def calculate_rsi(data, window=14):
           delta = data.diff()
           gain = delta.where(delta > 0, 0).rolling(window=window).mean()
@@ -75,7 +75,7 @@ if stock_input:
         with col2:
           st.metric(label="10日 RSI (10T)", value=f"{latest_rsi_10:.2f}")
 
-        # 3. 系統自動判定與建議邏輯
+        # 系統自動判定與建議邏輯
         st.markdown("---")
         st.subheader("🤖 系統智慧診斷與操作建議")
 
@@ -101,9 +101,10 @@ if stock_input:
         # 顯示近期走勢圖表
         st.markdown("---")
         st.subheader("📊 近期 RSI 走勢圖")
-
-        # 確保只抓取 RSI_5 和 RSI_10 欄位來畫圖，避免多重索引報錯
         rsi_chart_df = pd.DataFrame(
             {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
         ).tail(30)
         st.line_chart(rsi_chart_df)
+
+    except Exception as e:
+      st.error(f"讀取資料時發生錯誤：{e}")
