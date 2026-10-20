@@ -72,7 +72,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 側邊欄：自動重新整理與口訣
+# 側邊欄：僅保留乾淨的盯盤自動重新整理設定
 with st.sidebar:
   st.subheader("⚙️ 盯盤設定")
   auto_refresh = st.checkbox("啟用盤中自動重新整理 (每 60 秒)", value=False)
@@ -88,12 +88,6 @@ with st.sidebar:
     except ImportError:
       pass
 
-  st.markdown("---")
-  st.markdown("### 💡 犀利媽口訣")
-  st.markdown(
-      "> *「5T 過熱先入袋，10T 守住多頭在；*<br>*超跌見紅不急追，低接耐心等待來。」*"
-  )
-
 # 取得台灣當前時間
 tz_taiwan = pytz.timezone("Asia/Taipei")
 now_taiwan = datetime.now(tz_taiwan)
@@ -108,6 +102,11 @@ st.markdown(
     f" <b>時間：</b>{current_time_str} | <span style='color: #2563EB;"
     " font-weight: 600;'>👨‍💻 尼克范 V.1.020</span></p>",
     unsafe_allow_html=True,
+)
+
+# 🚀 犀利媽主頁固定口訣醒目看板
+st.info(
+    "💡 **犀利媽實戰口訣：**\n\n> *「5T 過熱先入袋，10T 守住多頭在；超跌見紅不急追，低接耐心等待來。」*"
 )
 
 st.markdown("---")
