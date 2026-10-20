@@ -188,4 +188,35 @@ if submit_btn and stock_input:
 
                     st.markdown("#### 📌 個股 RSI 深度解析：")
                     st.markdown(
-                        f"- {get_rsi_status_text(latest_rsi_5, '5
+                        f"- {get_rsi_status_text(latest_rsi_5, '5日 RSI (5T)')}"
+                    )
+                    st.markdown(
+                        f"- {get_rsi_status_text(latest_rsi_10, '10日 RSI (10T)')}"
+                    )
+
+                    # ===== 一眼看懂 =====
+                    st.markdown("---")
+                    col_a, col_b, col_c_status = st.columns(3)
+                    with col_a:
+                        st.metric("燈號", light)
+                    with col_b:
+                        st.metric("評分", f"{score}/100")
+                    with col_c_status:
+                        st.metric("建議", action)
+
+                    st.progress(score)
+
+                    # ===== 結論 =====
+                    if score >= 90:
+                        st.success(
+                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
+                            " -> ✅ 可考慮買進 / ✅ 可考慮加碼 / ✅ 持股續抱"
+                        )
+                    elif score >= 75:
+                        st.info(
+                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
+                            " -> ✅ 持股續抱 / ✅ 等待下一次訊號"
+                        )
+                    elif score >= 50:
+                        st.warning(
+                            f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100
