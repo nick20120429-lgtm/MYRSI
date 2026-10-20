@@ -136,43 +136,25 @@ if submit_btn and stock_input:
 
           # ===== 結論 =====
           if score >= 90:
-            st.success(f"""
-🎯 犀利媽結論
-{light}
-{conclusion}
-買進評分：{score}/100
-✅ 可考慮買進
-✅ 可考慮加碼
-✅ 持股續抱
-""")
+            st.success(
+                f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
+                " -> ✅ 可考慮買進 / ✅ 可考慮加碼 / ✅ 持股續抱"
+            )
           elif score >= 75:
-            st.info(f"""
-🎯 犀利媽結論
-{light}
-{conclusion}
-買進評分：{score}/100
-✅ 持股續抱
-✅ 等待下一次訊號
-""")
+            st.info(
+                f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
+                " -> ✅ 持股續抱 / ✅ 等待下一次訊號"
+            )
           elif score >= 50:
-            st.warning(f"""
-🎯 犀利媽結論
-{light}
-{conclusion}
-買進評分：{score}/100
-⚠️ 建議觀望
-⚠️ 等待方向確認
-""")
+            st.warning(
+                f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
+                " -> ⚠️ 建議觀望 / ⚠️ 等待方向確認"
+            )
           else:
-            st.error(f"""
-🎯 犀利媽結論
-{light}
-{conclusion}
-買進評分：{score}/100
-❌ 不建議追價
-❌ 建議分批賣出
-❌ 保留現金
-""")
+            st.error(
+                f"🎯 犀利媽結論 | {light} | {conclusion} | 買進評分：{score}/100"
+                " -> ❌ 不建議追價 / ❌ 建議分批賣出 / ❌ 保留現金"
+            )
 
           st.markdown("### 📌 操作建議")
           st.write(action)
@@ -194,4 +176,9 @@ with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明")
   st.markdown("""
     * **數值範圍**：介於 0 到 100 之間。
     * **多空分水嶺（50）**：
-        * **RSI > 50**：代表買方力道
+        * **RSI > 50**：代表買方力道較強（多方市場）。
+        * **RSI < 50**：代表賣方力道較強（空方市場）。
+    * **超買與超賣區間**：
+        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
+        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
+    """)
