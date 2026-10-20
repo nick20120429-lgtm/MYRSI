@@ -5,32 +5,70 @@ import yfinance as yf
 # 網頁標題
 st.title("📈 台股專用 RSI 智慧查詢與診斷工具")
 st.write(
-    "本工具**僅支援台灣股市**。請輸入台股代號或中文名稱（例如：2330、台積電、3231、緯創 或 5347），"
-    "點擊確定後將自動計算 5T 與 10T RSI 並對照買賣策略提供燈號建議。"
+    "本工具**僅支援台灣股市**。支援直接輸入**中文公司名稱**（例如：台積電、緯創、鴻海）"
+    "或**數字代號**（例如：2330、3605），點擊確定後將自動計算 5T 與 10T RSI 並提供買賣策略建議。"
 )
 
-# 常見台股中文名稱對照字典（可自行隨時擴充）
-stock_name_map = {
-    "台積電": "2330",
-    "緯創": "3231",
-    "鴻海": "2317",
-    "聯發科": "2454",
-    "廣達": "2382",
-    "長榮": "2603",
-    "聯電": "2303",
-    "微星": "2377",
-    "宏致": "3605",
-    "世界": "5347",
-    "台達電": "2308",
-}
+
+# 快取機制：自動從證交所抓取所有台股上市櫃公司的「中文名稱與代號」清單
+@st.cache_data(ttl=86400)  # 快取一天，避免每次點擊都重新下載
+def get_stock_name_mapping():
+  mapping = {}
+  try:
+    # 1. 抓取上市股票清單 (證交所)
+    url_twse = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=2"
+    df_twse = pd.read_html(url_twse)[0]
+    df_twse.columns = df_twse.iloc[0]
+    df_twse = df_twse.iloc[1:]
+
+    for _, row in df_twse.iterrows():
+      # 欄位通常包含「有價證券代號及名稱」 (例如: "2330 台積電")
+      col_val = str(row.iloc[0])
+      if " " in col_val:
+        parts = col_val.split(" ", 1)
+        if len(parts) == 2:
+          code, name = parts[0].strip(), parts[1].strip()
+          if len(code) == 4 and code.isdigit():
+            mapping[name] = code
+
+    # 2. 抓取上櫃股票清單 (櫃買中心)
+    url_tpex = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=4"
+    df_tpex = pd.read_html(url_tpex)[0]
+    df_tpex.columns = df_tpex.iloc[0]
+    df_tpex = df_tpex.iloc[1:]
+
+    for _, row in df_tpex.iterrows():
+      col_val = str(row.iloc[0])
+      if " " in col_val:
+        parts = col_val.split(" ", 1)
+        if len(parts) == 2:
+          code, name = parts[0].strip(), parts[1].strip()
+          if len(code) == 4 and code.isdigit():
+            mapping[name] = code
+
+  except Exception as e:
+    # 若聯絡不上官方網站，提供基本備用對照
+    mapping = {
+        "台積電": "2330",
+        "緯創": "3231",
+        "鴻海": "2317",
+        "聯發科": "2454",
+        "廣達": "2382",
+    }
+
+  return mapping
+
+
+# 載入對照表
+stock_name_map = get_stock_name_mapping()
 
 # 使用欄位排版讓輸入框跟按鈕並排
 col_input, col_btn = st.columns([3, 1])
 
 with col_input:
   stock_input = st.text_input(
-      "請輸入台股代號或名稱（例如 台積電）：",
-      value="2330",
+      "請輸入台股代號或中文名稱（例如 台積電、2330）：",
+      value="台積電",
       label_visibility="collapsed",
   )
 
@@ -41,16 +79,18 @@ with col_btn:
 if submit_btn and stock_input:
   raw_input = stock_input.strip()
 
-  # 判斷輸入的是中文名稱還是代號
+  # 判斷使用者輸入的是中文名稱還是代號
   if raw_input in stock_name_map:
     stock_digits = stock_name_map[raw_input]
-    st.info(f"偵測到您輸入【{raw_input}】，已自動對應至代號：{stock_digits}")
+    st.info(f"偵測到您輸入【{raw_input}】，已自動對應至台股代號：{stock_digits}")
   else:
+    # 如果不是直接對應到名稱，就過濾出數字
     stock_digits = "".join(filter(str.isdigit, raw_input))
 
   if not stock_digits:
     st.error(
-        "請輸入正確的台股數字代號（例如：2330）或常見中文名稱（例如：台積電、緯創）！"
+        "找不到該公司名稱，請確認輸入是否正確（例如：台積電、緯創、或直接輸入代號"
+        " 2330）！"
     )
   else:
     symbols_to_try = [f"{stock_digits}.TW", f"{stock_digits}.TWO"]
