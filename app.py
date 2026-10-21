@@ -17,7 +17,7 @@ with col_img:
         st.image(image_path, width=110)
 
 with col_header:
-    st.markdown("**開發者：尼克范 2026.10.21.V17（字串串接終極穩健版）**")
+    st.markdown("**開發者：尼克范 2026.10.21.V18（括號完全修正版）**")
     st.title("📈 犀利媽 20年極端心法與即時新聞動態分析工具")
 
 st.write("本工具**支援全台灣上市櫃股票**。請輸入台股代號（例如：2330、6239、3231、2317）：")
@@ -61,7 +61,8 @@ def fetch_stock_news(stock_code, stock_name, count=10):
     
     if feed.entries:
         for entry in feed.entries[:count]:
-            pub_date = getattr(entry, "published", "")[:16] if hasattr(entry, "published"] else ""
+            # 這裡已將結尾的方括號修正為正確的圓括號
+            pub_date = getattr(entry, "published", "")[:16] if hasattr(entry, "published") else ""
             news_items.append({
                 "title": entry.title,
                 "link": entry.link,
@@ -200,3 +201,109 @@ if submit_btn and stock_input:
                         action = "【心法執行】指標接近超跌區，先列入重點觀察清單，等 RSI 破 20 更好。"
                     elif max_rsi >= 70:
                         light = "🟠 警戒燈 (過熱拉高區)"
+                        score = 35
+                        action = "【心法執行】已有過熱跡象，停止追價，持股者開始調高停利點。"
+                    else:
+                        light = "⚪ 觀望燈 (常態雜訊區)"
+                        score = 50
+                        action = "【心法執行】按兵不動，常態區間不理它，專注盯緊少數核心主流股即可。"
+
+                    vol_text = "🔥 帶量突破（量能充足）" if is_volume_up else "❄️ 成交量偏冷（量能不足）"
+
+                    st.markdown("#### 📋 犀利媽 20 年極端心法檢視報告：")
+                    st.markdown("1. **【心法 1】極端值過濾**：" + market_state)
+                    st.markdown("2. **【心法 2】持股精品化**：當前量能狀態為 **" + vol_text + "**。")
+                    st.markdown("3. **【心法 3】消息與籌碼對照**：請對照下方 10 則最新即時新聞，確認基本面有無重大變動。")
+                    st.markdown(
+                        "4. **【心法 4】鐵血停損紀律**：\n"
+                        + "   - **燈號判定**：" + light + "（評分：" + str(score) + "/100）\n"
+                        + "   - **操作方針**：" + action + "\n"
+                        + "   - **⚠️ 鐵血原則**：方向不對或破支撐立刻**手刀停損**，絕不抱持「套牢變存股」的鴕鳥心態！"
+                    )
+
+                    st.markdown("---")
+                    col_a, col_b, col_c_status = st.columns(3)
+                    with col_a:
+                        st.metric("燈號", light)
+                    with col_b:
+                        st.metric("評分", str(score) + "/100")
+                    with col_c_status:
+                        st.metric("建議方針", action.split("】")[1] if "】" in action else action)
+
+                    st.progress(score)
+
+                    # 近期 RSI 走勢圖
+                    st.markdown("---")
+                    st.subheader("📊 近期 RSI 走勢圖")
+                    rsi_chart_df = pd.DataFrame(
+                        {"RSI_5": df["RSI_5"], "RSI_10": df["RSI_10"]}
+                    ).tail(60)
+                    st.line_chart(rsi_chart_df)
+
+                    # 動態抓取最新 10 則新聞
+                    st.markdown("---")
+                    st.subheader("📰【" + comp_name + " (" + stock_digits + ")】最新即時新聞與重大消息（動態抓取 10 則）")
+                    
+                    fetched_news = fetch_stock_news(stock_digits, comp_name, count=10)
+
+                    news_summary_for_ai = ""
+                    if fetched_news:
+                        for idx, item in enumerate(fetched_news, 1):
+                            st.markdown(
+                                "**" + str(idx) + ". [" + item['title'] + "](" + item['link'] + ")**  \n"
+                                + "⏱️ *發布時間：" + item['date'] + "* | 🏢 *來源：" + item['source'] + "*"
+                            )
+                            st.markdown("---")
+                            news_summary_for_ai += str(idx) + ". " + item['title'] + "\n"
+                    else:
+                        st.info("尚無查獲近期相關新聞，請至公開資訊觀測站參閱該股公告。")
+                        news_summary_for_ai = "無近期顯著新聞"
+
+                    # =======================================================
+                    # 🤖 Google Gemini AI 犀利媽雙軌深度點評
+                    # =======================================================
+                    if gemini_api_key:
+                        st.markdown("---")
+                        st.subheader("🤖 Google AI 犀利媽雙軌綜合點評")
+                        with st.spinner("🤖 Google Gemini 正結合犀利媽 20 年心法與即時新聞進行深度研判..."):
+                            try:
+                                client = genai.Client(api_key=gemini_api_key)
+                                
+                                vol_desc = "當日帶量大於5日均量" if is_volume_up else "量能偏冷低於5日均量"
+                                
+                                prompt_text = (
+                                    "你現在是台股知名實戰操盤專家「股市犀利媽（周亞瓊）」。請完全秉持你 20 年的交易哲學（常態區間30~70不看雜訊、專抓RSI<10或>90極端值、開精品店重質不重量、消息面與籌碼對照驗證、當斷則斷手刀停損），針對以下客觀數據與新聞進行精鍊、爽快且富有實戰價值的講評：\n\n"
+                                    "【股票資訊】\n"
+                                    f"* 股票名稱與代號：{comp_name} ({used_symbol})\n"
+                                    f"* 最新收盤價：{latest_close:.2f} 元 (最高: {latest_high:.2f}, 最低: {latest_low:.2f})\n"
+                                    f"* 5日 RSI: {latest_rsi_5:.2f} | 10日 RSI: {latest_rsi_10:.2f}\n"
+                                    f"* 量能狀況：{vol_desc}\n"
+                                    f"* 技術面判定：{market_state} | 燈號：{light} ({score}分)\n\n"
+                                    "【近期最新新聞摘要】\n"
+                                    f"{news_summary_for_ai}\n\n"
+                                    "【講評要求】\n"
+                                    "1. 以第一人稱口吻（如“我是犀利媽...”），用直白、實戰風格給予診斷。\n"
+                                    "2. 結合目前的 RSI 位階與最新新聞，明確說明“該買、該賣、該等，還是該停損”。\n"
+                                    "3. 字數約 200~300 字，著重於紀律與資金流動性。"
+                                )
+
+                                response = client.models.generate_content(
+                                    model="gemini-3.8-flash",
+                                    contents=prompt_text,
+                                )
+                                st.info("💡 **犀利媽 AI 實戰點評：**\n\n" + response.text)
+                            except Exception as ai_err:
+                                st.error("Google AI 點評呼叫失敗：" + str(ai_err))
+
+            except Exception as e:
+                st.error("讀取台股資料時發生錯誤：" + str(e))
+
+# 頁面最下方心法備註說明
+st.markdown("---")
+with st.expander("📖 點擊展開：犀利媽 20 年極端操盤四大鐵則"):
+    st.markdown("""
+    1. **只抓極端值**：平時常態區間（30~70）的指標雜訊完全無視；唯有極端過熱（>90）或極端超跌（<10）才動作。
+    2. **開精品店不開雜貨店**：持股精簡至 2~3 檔主流焦點股，不碰無量冷門股與低價水餃股。
+    3. **消息與極端指標雙軌驗證**：主動解讀財經資訊，反向利用群體恐慌或過度樂觀。
+    4. **絕不凹單、手刀停損**：方向不對立刻砍單，確保資金流動性與冷靜的思考能力。
+    """)
