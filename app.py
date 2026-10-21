@@ -4,8 +4,20 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 import feedparser
+from google import genai
 
 st.set_page_config(page_title="犀利媽 20年極端心法分析工具", page_icon="📈", layout="wide")
+
+# 側邊欄：設定 Google Gemini API Key
+with st.sidebar:
+    st.header("⚙️ AI 模型設定")
+    api_key_input = st.text_input(
+        "請輸入 Google Gemini API Key：",
+        type="password",
+        help="可至 Google AI Studio (aistudio.google.com) 免費申請"
+    )
+    # 如果 secrets 有設定，自動作為備用
+    gemini_api_key = api_key_input or st.secrets.get("GEMINI_API_KEY", "")
 
 # 頂部開發者資訊與圖片展示區塊
 col_img, col_header = st.columns([1, 4])
@@ -16,7 +28,7 @@ with col_img:
         st.image(image_path, width=110)
 
 with col_header:
-    st.markdown("**開發者：尼克范 2026.10.21.V9（語法修正最終版）**")
+    st.markdown("**開發者：尼克范 2026.10.21.V10（Gemini AI 雙軌深度分析版）**")
     st.title("📈 犀利媽 20年極端心法與即時新聞動態分析工具")
 
 st.write("本工具**支援全台灣上市櫃股票**。請輸入台股代號（例如：2330、6239、3231、2317）：")
@@ -170,7 +182,6 @@ if submit_btn and stock_input:
                     min_rsi = min(latest_rsi_5, latest_rsi_10)
                     max_rsi = max(latest_rsi_5, latest_rsi_10)
 
-                    # 1. 極端位階狀態判定
                     if max_rsi >= 80:
                         market_state = f"🔥 **極端過熱區** (RSI: {max_rsi:.1f})：高檔過熱，隨時有急跌拉回風險。"
                     elif min_rsi <= 20:
@@ -182,7 +193,6 @@ if submit_btn and stock_input:
                     else:
                         market_state = f"⚖️ **常態雜訊區** (RSI: {min_rsi:.1f}~{max_rsi:.1f})：30~70 盤整中，犀利媽視為無效訊號。"
 
-                    # 2. 犀利媽專屬燈號與評分判定
                     if max_rsi >= 85:
                         light = "🔴 賣出燈 (極端過熱)"
                         score = 15
@@ -209,11 +219,10 @@ if submit_btn and stock_input:
                         score = 50
                         action = "【心法執行】按兵不動，常態區間不理它，專注盯緊少數核心主流股即可。"
 
-                    # 結構化 4 大心法報告
                     st.markdown("#### 📋 犀利媽 20 年極端心法檢視報告：")
                     st.markdown(f"1. **【心法 1】極端值過濾**：{market_state}")
                     st.markdown(f"2. **【心法 2】持股精品化**：當前量能狀態為 **{'🔥 帶量突破（量能充足）' if is_volume_up else '❄️ 成交量偏冷（量能不足）'}**。")
-                    st.markdown(f"3. **【心法 3】消息與籌碼對照**：請對照下方 10 則最新即時新聞，確認基本面有無重大變動。")
+                    st.markdown(f"3. **【心法 3】消息與籌碼對照**：請對照最下方 10 則最新即時新聞，確認基本面有無重大變動。")
                     st.markdown(
                         f"4. **【心法 4】鐵血停損紀律**：\n"
                         f"   - **燈號判定**：{light}（評分：{score}/100）\n"
@@ -221,7 +230,6 @@ if submit_btn and stock_input:
                         f"   - **⚠️ 鐵血原則**：方向不對或破支撐立刻**手刀停損**，絕不抱持「套牢變存股」的鴕鳥心態！"
                     )
 
-                    # ===== 一眼看懂面板 =====
                     st.markdown("---")
                     col_a, col_b, col_c_status = st.columns(3)
                     with col_a:
@@ -241,14 +249,13 @@ if submit_btn and stock_input:
                     ).tail(60)
                     st.line_chart(rsi_chart_df)
 
-                    # =======================================================
-                    # 📰 動態抓取最新 10 則新聞
-                    # =======================================================
+                    # 動態抓取最新 10 則新聞
                     st.markdown("---")
                     st.subheader(f"📰【{comp_name} ({stock_digits})】最新即時新聞與重大消息（動態抓取 10 則）")
                     
                     fetched_news = fetch_stock_news(stock_digits, comp_name, count=10)
 
+                    news_summary_for_ai = ""
                     if fetched_news:
                         for idx, item in enumerate(fetched_news, 1):
                             st.markdown(
@@ -256,8 +263,48 @@ if submit_btn and stock_input:
                                 f"⏱️ *發布時間：{item['date']}* | 🏢 *來源：{item['source']}*"
                             )
                             st.markdown("---")
+                            news_summary_for_ai += f"{idx}. {item['title']}\n"
                     else:
                         st.info("尚無查獲近期相關新聞，請至公開資訊觀測站參閱該股公告。")
+                        news_summary_for_ai = "無近期顯著新聞"
+
+                    # =======================================================
+                    # 🤖 新增：Google Gemini AI 犀利媽雙軌綜合點評
+                    # =======================================================
+                    st.markdown("---")
+                    st.subheader("🤖 Google Gemini AI 犀利媽綜合智能點評")
+
+                    if not gemini_api_key:
+                        st.warning("⚠️ 未檢測到 Gemini API Key。請在左側邊欄輸入 API Key 以解鎖 Google AI 智能點評功能！")
+                    else:
+                        with st.spinner("🤖 Google Gemini 正結合犀利媽 20 年心法與即時新聞進行深度研判..."):
+                            try:
+                                client = genai.Client(api_key=gemini_api_key)
+                                prompt = f"""
+你現在是台股知名實戰專家「股市犀利媽（周亞瓊）」。請完全秉持你 20 年的交易哲學（常態區間30~70不看雜訊、專抓RSI<10或>90極端值、開精品店重質不重量、消息面與籌碼對照驗證、當斷則斷手刀停損），針對以下數據進行一段精鍊且辛辣、富有實戰價值的短評：
+
+【股票資訊】
+* 股票：{comp_name} ({used_symbol})
+* 最新收盤價：{latest_close:.2f} 元 (本日高價: {latest_high:.2f}, 低價: {latest_low:.2f})
+* 5日 RSI: {latest_rsi_5:.2f} | 10日 RSI: {latest_rsi_10:.2f}
+* 量能狀況：{'當日帶量大於5日均量' if is_volume_up else '量能偏冷低於5日均量'}
+* 程式當前判定位階：{market_state}
+
+【近期市場即時新聞摘要】
+{news_summary_for_ai}
+
+【犀利媽點評要求】
+1. 以第一人稱口吻（例如「我是犀利媽...」），用直白、爽快、實戰風格給予診斷。
+2. 對照目前的 RSI 位置與新聞消息，說明此時「該追、該砍、還是繼續按兵不動」。
+3. 字數約 200~300 字，強調紀律與流動性。
+"""
+                                response = client.models.generate_content(
+                                    model="gemini-2.5-flash",
+                                    contents=prompt,
+                                )
+                                st.info(f"💡 **犀利媽 AI 實戰講評：**\n\n{response.text}")
+                            except Exception as ai_err:
+                                st.error(f"Google AI 呼叫失敗：{ai_err}")
 
             except Exception as e:
                 st.error(f"讀取台股資料時發生錯誤：{e}")
