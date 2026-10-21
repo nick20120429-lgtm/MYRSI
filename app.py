@@ -7,21 +7,20 @@ import yfinance as yf
 col_img, col_header = st.columns([1, 4])
 
 with col_img:
-    # 預設載入與 app.py 同目錄下的 avatar.png
     image_path = "avatar.png"
     if os.path.exists(image_path):
         st.image(image_path, width=110)
 
 with col_header:
-    st.markdown("**開發者：尼克范2026.10.20.V2（真·犀利媽實戰版）**")
-    st.title("📈 犀利媽極端 RSI 實戰分析工具")
+    st.markdown("**開發者：尼克范2026.10.20.V3（犀利媽 20年極端心法完整版）**")
+    st.title("📈 犀利媽 20年極端心法實戰分析工具")
 
-st.write("本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、6239）：")
+st.write("本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、3231）：")
 st.write(
-    "人生自強，先搞好自己： 犀利媽曾言：「平時常態區間不看雜訊，專抓極端過熱與極端超跌！」"
+    "💡 **犀利媽 20年核心哲學**：「常態區間不看雜訊、極端行情絕不手軟、狀況不對手刀停損！」"
 )
 
-# 簡易台股中文名稱對照字典（可自行擴充）
+# 簡易台股中文名稱對照字典
 stock_name_dict = {
     "2330": "台積電",
     "6239": "力成",
@@ -31,7 +30,6 @@ stock_name_dict = {
     "3231": "緯創",
 }
 
-# 使用欄位排版讓輸入框跟按鈕並排
 col_input, col_btn = st.columns([3, 1])
 
 with col_input:
@@ -55,7 +53,7 @@ if submit_btn and stock_input:
         used_symbol = ""
 
         with st.spinner(
-            f"正在鎖定台股代號 {stock_digits} 抓取歷史數據並以犀利媽極端邏輯分析..."
+            f"正在鎖定台股代號 {stock_digits} 套用犀利媽 20年極端心法運算中..."
         ):
             try:
                 for sym in symbols_to_try:
@@ -72,7 +70,6 @@ if submit_btn and stock_input:
                         f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確。"
                     )
                 else:
-                    # 兼容不同 pandas 版本的欄位結構
                     if isinstance(df.columns, pd.MultiIndex):
                         close_prices = df[("Close", used_symbol)]
                         high_prices = df[("High", used_symbol)]
@@ -107,10 +104,7 @@ if submit_btn and stock_input:
                     latest_diff = latest_high - latest_low
                     latest_rsi_5 = float(df["RSI_5"].iloc[-1])
                     latest_rsi_10 = float(df["RSI_10"].iloc[-1])
-                    prev_rsi_5 = float(df["RSI_5"].iloc[-2])
-                    prev_rsi_10 = float(df["RSI_10"].iloc[-2])
                     
-                    # 計算成交量與 5 日均量比對
                     latest_vol = float(volume.iloc[-1])
                     avg_vol_5 = float(volume.tail(5).mean())
                     is_volume_up = latest_vol > avg_vol_5
@@ -121,7 +115,6 @@ if submit_btn and stock_input:
                         f"{comp_name}【{used_symbol}】最新收盤價：{latest_close:.2f} 元"
                     )
 
-                    # 4 個欄位展示：最高、最低、價差、最新收盤
                     col_h, col_l, col_diff, col_c = st.columns(4)
                     with col_h:
                         st.metric(label="🔺 本日最高", value=f"{latest_high:.2f}")
@@ -147,59 +140,53 @@ if submit_btn and stock_input:
                         )
 
                     # ==========================
-                    # 🎯 犀利媽真實極端法則分析引擎
+                    # 🎯 犀利媽 20年極端心法判定核心
                     # ==========================
                     st.markdown("---")
-                    st.subheader("🎯 犀利媽實戰極端法則分析報告")
+                    st.subheader("🎯 犀利媽 20年極端心法實戰報告")
 
-                    # 修正後的判定邏輯：嚴格對齊「極端值優先」與「過濾常態雜訊」
+                    # 心法 1：極端值判定邏輯（過濾常態雜訊）
                     if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
-                        light = "🔴 賣出燈 (過熱警戒)"
+                        light = "🔴 賣出燈 (極端過熱警戒)"
                         score = 15
                         conclusion = "市場極度過熱（高檔鈍化或隨時回檔）"
-                        action = "果斷獲利了結，絕對不追高"
+                        action = "【心法執行】果斷獲利了結或順勢放空，絕不追高！"
                     elif latest_rsi_5 <= 10 or latest_rsi_10 <= 15:
                         if is_volume_up:
-                            light = "🟢 買進燈 (極端超跌爆量)"
+                            light = "🟢 買進燈 (極端超跌 + 帶量)"
                             score = 90
-                            conclusion = "非理性恐慌急殺 + 爆量止跌"
-                            action = "分批進場低接搶反彈"
+                            conclusion = "非理性恐慌急殺，且有主力帶量護盤"
+                            action = "【心法執行】分批進場低接搶反彈，嚴設停損。"
                         else:
-                            light = "🔵 觀察燈 (極端超跌等待量)"
+                            light = "🔵 觀察燈 (極端超跌但量能不足)"
                             score = 65
-                            conclusion = "進入極端超跌區，但量能尚未放大"
-                            action = "持續盯盤，等待帶量紅K再出手"
+                            conclusion = "進入極端超跌區，但量能偏冷"
+                            action = "【心法執行】持續盯盤，等待帶量紅K出現再出手。"
                     else:
-                        # 30~70 常態區間一律降評，避免過去軟體在 50~60 亂給 95 分的失真
-                        light = "⚪ 觀望燈 (常態震盪區)"
+                        # 心法 2：常態區間不亂動（開精品店不亂買）
+                        light = "⚪ 觀望燈 (常態雜訊區)"
                         score = 50
-                        conclusion = "常態區間多空拉鋸（無極端訊號）"
-                        action = "按兵不動，專心等待極端機會"
+                        conclusion = "常態震盪區（無極端訊號）"
+                        action = "【心法執行】按兵不動，專注盯緊少數核心主流股，絕不亂槍打鳥。"
 
-                    # 1. 市場狀態分析判定
+                    # 市場位階狀態
                     if latest_rsi_5 >= 80 or latest_rsi_10 >= 80:
                         market_state = "🔥 **極端過熱區**：RSI 飆高，隨時有急跌反轉風險。"
                     elif latest_rsi_5 <= 20 or latest_rsi_10 <= 20:
                         market_state = "❄️ **極端超跌區**：RSI 進入個位數或低檔，留意恐慌盤後的反彈契機。"
                     else:
-                        market_state = "⚖️ **常態震盪區**：RSI 停留在 30~70 之間（犀利媽視為無效雜訊區）。"
+                        market_state = "⚖️ **常態雜訊區**：RSI 停留在 30~70 之間（犀利媽視為無效盤整區，完全不管）。"
 
-                    # 2. 交叉訊號判定（加上過濾說明）
-                    cross_signal = "無明顯極端交叉"
-                    if latest_rsi_5 > latest_rsi_10:
-                        cross_signal = "📈 **多頭排列**：5T 位於 10T 之上（常態區間不盲目追價）。"
-                    else:
-                        cross_signal = "📉 **空頭排列**：5T 位於 10T 之下（留意低檔鈍化風險）。"
-
-                    # 3. 成交量與動能評估
-                    vol_note = f"當日成交量 {'大於' if is_volume_up else '小於'} 5日均量（{'主力有動作' if is_volume_up else '量能偏冷'}）。"
-
-                    # 輸出結構化分析報告
-                    st.markdown("#### 📋 犀利媽 20 年極端心法報告：")
-                    st.markdown(f"1. **市場位階狀態**：{market_state}")
-                    st.markdown(f"2. **均線與量能結構**：\n   - {cross_signal}\n   - 📊 **量能狀態**：{vol_note}")
+                    # 結構化 4 大心法檢視報告輸出
+                    st.markdown("#### 📋 犀利媽 20 年極端心法檢視報告：")
+                    st.markdown(f"1. **【心法 1】極端值過濾**：{market_state}")
+                    st.markdown(f"2. **【心法 2】持股精品化**：專注主流焦點股，避免分散資金當雜貨店。當前量能狀態：{'🔥 具備人氣與成交量' if is_volume_up else '❄️ 成交量偏冷，建議觀望'}")
+                    st.markdown(f"3. **【心法 3】消息與籌碼對照**：當前 5日/10日 RSI 位階已提供明確訊號，切勿盲目聽信明牌追高殺低。")
                     st.markdown(
-                        f"3. **綜合實戰決策**：\n   - **燈號判定**：{light}（評分：{score}/100）\n   - **操作方針**：{action}\n   - **💡 核心原則**：平時常態區間不亂動，專心等待極端過熱（>90）或極端超跌（<10）再精準出手！"
+                        f"4. **【心法 4】鐵血停損紀律**：\n"
+                        f"   - **燈號判定**：{light}（評分：{score}/100）\n"
+                        f"   - **操作方針**：{action}\n"
+                        f"   - **⚠️ 鐵血原則**：方向不對或破支撐立刻**手刀停損**，絕不抱持「套牢變存股」的鴕鳥心態！"
                     )
 
                     # ===== 一眼看懂面板 =====
@@ -210,7 +197,7 @@ if submit_btn and stock_input:
                     with col_b:
                         st.metric("評分", f"{score}/100")
                     with col_c_status:
-                        st.metric("建議", action)
+                        st.metric("建議方針", action.split("】")[1] if "】" in action else action)
 
                     st.progress(score)
 
@@ -225,11 +212,12 @@ if submit_btn and stock_input:
             except Exception as e:
                 st.error(f"讀取台股資料時發生錯誤：{e}")
 
-# 在頁面下方加入 RSI 核心概念備註說明區塊
+# 頁下方心法備註
 st.markdown("---")
-with st.expander("📖 點擊展開：犀利媽心法與 RSI 極端值操作守則"):
+with st.expander("📖 點擊展開：犀利媽 20 年極端操盤四大鐵則"):
     st.markdown("""
-    * **常態區間（RSI 30~70）**：不看黃金交叉、不亂買。此區間雜訊極多，盲目操作容易在盤整中被洗盤。
-    * **極端過熱（RSI ≥ 90）**：強勢飆股的過熱區。連續多日黏在高檔且漲不動時，準備獲利出場或順勢放空。
-    * **極端超跌（RSI ≤ 10）**：非理性恐慌的黃金買點。此時需配合成交量放大（帶量紅K），才是高勝率的搶反彈時機。
+    1. **只抓極端值**：平時常態區間（30~70）的指標雜訊完全無視；唯有極端過熱（>90）或極端超跌（<10）才動作。
+    2. **開精品店不開雜貨店**：持股精簡至 2~3 檔主流焦點股，不碰無量冷門股與低價水餃股。
+    3. **消息與極端指標雙軌驗證**：主動解讀財經資訊，反向利用群體恐慌或過度樂觀。
+    4. **絕不凹單、手刀停損**：方向不對立刻砍單，確保資金流動性與冷靜的思考能力。
     """)
