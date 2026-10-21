@@ -13,12 +13,12 @@ with col_img:
         st.image(image_path, width=110)
 
 with col_header:
-    st.markdown("**開發者：尼克范2026.10.20.V1**")
-    st.title("📈 RSI工具")
+    st.markdown("**開發者：尼克范2026.10.20.V2（真·犀利媽實戰版）**")
+    st.title("📈 犀利媽極端 RSI 實戰分析工具")
 
 st.write("本工具**僅支援台灣股市**。請輸入台股代號（例如：2330、6239）：")
 st.write(
-    "人生自強，先搞好自己： 犀利媽曾言：「沒有把自己的人生弄好，再會賺錢也沒有用。」 "
+    "人生自強，先搞好自己： 犀利媽曾言：「平時常態區間不看雜訊，專抓極端過熱與極端超跌！」"
 )
 
 # 簡易台股中文名稱對照字典（可自行擴充）
@@ -28,6 +28,7 @@ stock_name_dict = {
     "2317": "鴻海",
     "3605": "宏致",
     "5347": "世界",
+    "3231": "緯創",
 }
 
 # 使用欄位排版讓輸入框跟按鈕並排
@@ -35,7 +36,7 @@ col_input, col_btn = st.columns([3, 1])
 
 with col_input:
     stock_input = st.text_input(
-        "請輸入台股代號（例如 6239）：", value="6239", label_visibility="collapsed"
+        "請輸入台股代號（例如 3231）：", value="3231", label_visibility="collapsed"
     )
 
 with col_btn:
@@ -47,14 +48,14 @@ if submit_btn and stock_input:
     stock_digits = "".join(filter(str.isdigit, raw_input))
 
     if not stock_digits:
-        st.error("請輸入正確的台股數字代號（例如：2330、6239）！")
+        st.error("請輸入正確的台股數字代號（例如：2330、3231）！")
     else:
         symbols_to_try = [f"{stock_digits}.TW", f"{stock_digits}.TWO"]
         df = pd.DataFrame()
         used_symbol = ""
 
         with st.spinner(
-            f"正在鎖定台股代號 {stock_digits} 抓取歷史數據並精準計算 RSI 與訊號..."
+            f"正在鎖定台股代號 {stock_digits} 抓取歷史數據並以犀利媽極端邏輯分析..."
         ):
             try:
                 for sym in symbols_to_try:
@@ -68,7 +69,7 @@ if submit_btn and stock_input:
 
                 if df.empty:
                     st.error(
-                        f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確（僅支援台股上市櫃股票）。"
+                        f"找不到台股代號【{stock_digits}】的資料，請確認代號是否正確。"
                     )
                 else:
                     # 兼容不同 pandas 版本的欄位結構
@@ -76,10 +77,12 @@ if submit_btn and stock_input:
                         close_prices = df[("Close", used_symbol)]
                         high_prices = df[("High", used_symbol)]
                         low_prices = df[("Low", used_symbol)]
+                        volume = df[("Volume", used_symbol)]
                     else:
                         close_prices = df["Close"]
                         high_prices = df["High"]
                         low_prices = df["Low"]
+                        volume = df["Volume"]
 
                     def calculate_rsi(data, window=14):
                         delta = data.diff()
@@ -101,20 +104,24 @@ if submit_btn and stock_input:
                     latest_close = float(close_prices.iloc[-1])
                     latest_high = float(high_prices.iloc[-1])
                     latest_low = float(low_prices.iloc[-1])
-                    latest_diff = latest_high - latest_low  # 計算最高與最低價差
+                    latest_diff = latest_high - latest_low
                     latest_rsi_5 = float(df["RSI_5"].iloc[-1])
                     latest_rsi_10 = float(df["RSI_10"].iloc[-1])
                     prev_rsi_5 = float(df["RSI_5"].iloc[-2])
                     prev_rsi_10 = float(df["RSI_10"].iloc[-2])
+                    
+                    # 計算成交量與 5 日均量比對
+                    latest_vol = float(volume.iloc[-1])
+                    avg_vol_5 = float(volume.tail(5).mean())
+                    is_volume_up = latest_vol > avg_vol_5
 
                     comp_name = stock_name_dict.get(stock_digits, "台股公司")
 
-                    # 顯示自訂格式與最新收盤
                     st.success(
                         f"{comp_name}【{used_symbol}】最新收盤價：{latest_close:.2f} 元"
                     )
 
-                    # 用 4 個欄位分別展示：本日最高、本日最低、價差、最新收盤
+                    # 4 個欄位展示：最高、最低、價差、最新收盤
                     col_h, col_l, col_diff, col_c = st.columns(4)
                     with col_h:
                         st.metric(label="🔺 本日最高", value=f"{latest_high:.2f}")
@@ -140,96 +147,62 @@ if submit_btn and stock_input:
                         )
 
                     # ==========================
-                    # 🎯 犀利媽法則分析與市場狀態報告
+                    # 🎯 犀利媽真實極端法則分析引擎
                     # ==========================
                     st.markdown("---")
-                    st.subheader("🎯 犀利媽法則分析與市場狀態報告")
+                    st.subheader("🎯 犀利媽實戰極端法則分析報告")
 
-                    # 燈號與評分判定邏輯
+                    # 修正後的判定邏輯：嚴格對齊「極端值優先」與「過濾常態雜訊」
                     if latest_rsi_5 >= 90 or latest_rsi_10 >= 90:
-                        light = "🔴 賣出燈"
-                        score = 20
-                        conclusion = "市場極度過熱（鈍化風險高）"
-                        action = "建議分批獲利了結"
-                    elif latest_rsi_5 >= 70:
-                        light = "🟠 警戒燈"
-                        score = 40
-                        conclusion = "市場偏熱（超買區）"
-                        action = "停止追價，留意回檔"
-                    elif latest_rsi_5 > latest_rsi_10 and latest_rsi_5 >= 50:
-                        light = "🟢 買進燈"
-                        score = 95
-                        conclusion = "多頭攻擊型態（多方市場）"
-                        action = "可考慮買進或加碼"
-                    elif latest_rsi_5 < latest_rsi_10 and latest_rsi_10 >= 50:
-                        light = "🟡 續抱燈"
-                        score = 80
-                        conclusion = "多頭整理型態"
-                        action = "持股續抱"
-                    elif latest_rsi_5 < 30 and latest_rsi_10 < 40:
-                        light = "🔵 觀察燈"
-                        score = 75
-                        conclusion = "超賣區（市場過冷）"
-                        action = "觀察止跌反彈機會"
+                        light = "🔴 賣出燈 (過熱警戒)"
+                        score = 15
+                        conclusion = "市場極度過熱（高檔鈍化或隨時回檔）"
+                        action = "果斷獲利了結，絕對不追高"
+                    elif latest_rsi_5 <= 10 or latest_rsi_10 <= 15:
+                        if is_volume_up:
+                            light = "🟢 買進燈 (極端超跌爆量)"
+                            score = 90
+                            conclusion = "非理性恐慌急殺 + 爆量止跌"
+                            action = "分批進場低接搶反彈"
+                        else:
+                            light = "🔵 觀察燈 (極端超跌等待量)"
+                            score = 65
+                            conclusion = "進入極端超跌區，但量能尚未放大"
+                            action = "持續盯盤，等待帶量紅K再出手"
                     else:
-                        light = "⚪ 觀望燈"
+                        # 30~70 常態區間一律降評，避免過去軟體在 50~60 亂給 95 分的失真
+                        light = "⚪ 觀望燈 (常態震盪區)"
                         score = 50
-                        conclusion = "區間整理（方向未明）"
-                        action = "暫時觀望"
+                        conclusion = "常態區間多空拉鋸（無極端訊號）"
+                        action = "按兵不動，專心等待極端機會"
 
                     # 1. 市場狀態分析判定
-                    if latest_rsi_5 >= 70 or latest_rsi_10 >= 70:
-                        market_state = "🔥 **市場過熱（超買區）**：RSI 進入高檔區，未來反轉向下機率高，需嚴防短線回檔。"
-                    elif latest_rsi_5 <= 30 or latest_rsi_10 <= 30:
-                        market_state = "❄️ **市場過冷（超賣區）**：RSI 進入低檔區，未來止跌回升機率高，可尋找低接契機。"
+                    if latest_rsi_5 >= 80 or latest_rsi_10 >= 80:
+                        market_state = "🔥 **極端過熱區**：RSI 飆高，隨時有急跌反轉風險。"
+                    elif latest_rsi_5 <= 20 or latest_rsi_10 <= 20:
+                        market_state = "❄️ **極端超跌區**：RSI 進入個位數或低檔，留意恐慌盤後的反彈契機。"
                     else:
-                        market_state = "⚖️ **區間整理 / 多空拉鋸**：RSI 處於 30~70 之間，多空無明顯極端偏向。"
+                        market_state = "⚖️ **常態震盪區**：RSI 停留在 30~70 之間（犀利媽視為無效雜訊區）。"
 
-                    # 2. 交叉訊號判定
-                    cross_signal = "無明顯交叉"
-                    if prev_rsi_5 <= prev_rsi_10 and latest_rsi_5 > latest_rsi_10:
-                        cross_signal = "🟢 **黃金交叉（買進訊號）**：5日 RSI 向上突破 10日 RSI，短期上漲力道強於長期。"
-                    elif (
-                        prev_rsi_5 >= prev_rsi_10 and latest_rsi_5 < latest_rsi_10
-                    ):
-                        cross_signal = "🔴 **死亡交叉（賣出訊號）**：5日 RSI 向下跌破 10日 RSI，短期下跌力道強於長期。"
+                    # 2. 交叉訊號判定（加上過濾說明）
+                    cross_signal = "無明顯極端交叉"
+                    if latest_rsi_5 > latest_rsi_10:
+                        cross_signal = "📈 **多頭排列**：5T 位於 10T 之上（常態區間不盲目追價）。"
                     else:
-                        if latest_rsi_5 > latest_rsi_10:
-                            cross_signal = (
-                                "📈 **多頭排列**：5T 持續位於 10T 之上。"
-                            )
-                        else:
-                            cross_signal = (
-                                "📉 **空頭排列**：5T 持續位於 10T 之下。"
-                            )
+                        cross_signal = "📉 **空頭排列**：5T 位於 10T 之下（留意低檔鈍化風險）。"
 
-                    # 3. 背離與鈍化風險評估
-                    recent_close = close_prices.tail(10)
-                    recent_rsi = df["RSI_5"].tail(10)
-                    divergence_note = "目前未偵測到明顯強烈背離型態。"
+                    # 3. 成交量與動能評估
+                    vol_note = f"當日成交量 {'大於' if is_volume_up else '小於'} 5日均量（{'主力有動作' if is_volume_up else '量能偏冷'}）。"
 
-                    if (
-                        recent_close.iloc[-1] >= recent_close.max() * 0.99
-                        and latest_rsi_5 < recent_rsi.quantile(0.5)
-                    ):
-                        divergence_note = "⚠️ **注意下跌背離（頂背離轉弱訊號）**：股價處於高檔，但短天期 RSI 上漲力道減弱，慎防見高拉回。"
-                    elif (
-                        recent_close.iloc[-1] <= recent_close.min() * 1.01
-                        and latest_rsi_5 > recent_rsi.quantile(0.5)
-                    ):
-                        divergence_note = "💡 **注意上漲背離（底背離轉強訊號）**：股價創新低但 RSI 未創新低且向上，下跌力道可能正逐漸減弱。"
-
-                    # 輸出分析報告格式
-                    st.markdown("#### 📋 犀利媽專屬結構化分析報告：")
-                    st.markdown(f"1. **當前市場狀態**：{market_state}")
+                    # 輸出結構化分析報告
+                    st.markdown("#### 📋 犀利媽 20 年極端心法報告：")
+                    st.markdown(f"1. **市場位階狀態**：{market_state}")
+                    st.markdown(f"2. **均線與量能結構**：\n   - {cross_signal}\n   - 📊 **量能狀態**：{vol_note}")
                     st.markdown(
-                        f"2. **技術交叉與背離訊號**：\n   - {cross_signal}\n   - {divergence_note}"
-                    )
-                    st.markdown(
-                        f"3. **綜合操作建議與風險提示**：\n   - **燈號判定**：{light}（評分：{score}/100）\n   - **操作方針**：{action}\n   - **⚠️ 核心風險提醒**：需注意 RSI 指標在極端行情可能發生「鈍化」（在 80~90+ 或 10~20 之間持續徘徊導致參考價值降低），技術指標僅能作為警示與機率評估，不可作為絕對預測，請務必配合個人資金控管與停損機制。"
+                        f"3. **綜合實戰決策**：\n   - **燈號判定**：{light}（評分：{score}/100）\n   - **操作方針**：{action}\n   - **💡 核心原則**：平時常態區間不亂動，專心等待極端過熱（>90）或極端超跌（<10）再精準出手！"
                     )
 
-                    # ===== 一眼看懂 =====
+                    # ===== 一眼看懂面板 =====
                     st.markdown("---")
                     col_a, col_b, col_c_status = st.columns(3)
                     with col_a:
@@ -254,13 +227,9 @@ if submit_btn and stock_input:
 
 # 在頁面下方加入 RSI 核心概念備註說明區塊
 st.markdown("---")
-with st.expander("📖 點擊展開：RSI 的核心概念與數值範圍說明"):
+with st.expander("📖 點擊展開：犀利媽心法與 RSI 極端值操作守則"):
     st.markdown("""
-    * **數值範圍**：介於 0 到 100 之間。
-    * **多空分水嶺（50）**：
-        * **RSI > 50**：代表買方力道較強（多方市場）。
-        * **RSI < 50**：代表賣方力道較強（空方市場）。
-    * **超買與超賣區間**：
-        * **RSI ≥ 70 或 80（甚至 90+）**：進入超買區（市場過熱，短線有回檔或下跌風險，高檔連續多日可準備賣出）。
-        * **RSI ≤ 30 或 20**：進入超賣區（市場過冷，短線有反彈或上漲機會）。
+    * **常態區間（RSI 30~70）**：不看黃金交叉、不亂買。此區間雜訊極多，盲目操作容易在盤整中被洗盤。
+    * **極端過熱（RSI ≥ 90）**：強勢飆股的過熱區。連續多日黏在高檔且漲不動時，準備獲利出場或順勢放空。
+    * **極端超跌（RSI ≤ 10）**：非理性恐慌的黃金買點。此時需配合成交量放大（帶量紅K），才是高勝率的搶反彈時機。
     """)
