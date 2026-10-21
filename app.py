@@ -5,6 +5,9 @@ import streamlit as st
 import yfinance as yf
 import feedparser
 
+# 頁面寬度設定與標題
+st.set_page_config(page_title="犀利媽極端 RSI 與動態新聞分析工具", page_icon="📈", layout="wide")
+
 # 頂部開發者資訊與圖片展示區塊
 col_img, col_header = st.columns([1, 4])
 
@@ -14,15 +17,15 @@ with col_img:
         st.image(image_path, width=110)
 
 with col_header:
-    st.markdown("**開發者：尼克范2026.10.20.V6（犀利媽心法 + 動態抓取10則新聞版）**")
+    st.markdown("**開發者：尼克范 2026.10.20.V6 最終整合版**")
     st.title("📈 犀利媽 20年極端心法與即時新聞動態分析工具")
 
 st.write("本工具**支援全台灣上市櫃股票**。請輸入台股代號（例如：2330、6239、3231、2317）：")
 st.write(
-    "💡 **犀利媽 20年核心哲學**：「常態區間不看雜訊、極端行情絕不手軟、對照消息面靈活操作！」"
+    "💡 **犀利媽 20年核心哲學**：「常態區間不看雜訊、極端行情絕不手軟、對照消息面靈活操作、破支撐手刀停損！」"
 )
 
-# 擴充常用台股名稱對照字典（若未在字典中，程式會自動以代號搜尋新聞）
+# 常用台股中文名稱對照字典（若未在字典中，程式會自動以代號搜尋新聞）
 stock_name_dict = {
     "2330": "台積電",
     "6239": "力成",
@@ -38,7 +41,7 @@ stock_name_dict = {
 
 def fetch_stock_news(stock_code, stock_name, count=10):
     """
-    透過 Yahoo Finance RSS 動態抓取該台股最新的即時新聞與重大消息（至少 10 則）
+    透過 Google/Yahoo 財經新聞 RSS 動態抓取該台股最新的即時新聞與重大消息（至少 10 則）
     """
     search_query = f"{stock_code} {stock_name}" if stock_name != "台股公司" else stock_code
     encoded_query = urllib.parse.quote(search_query)
@@ -81,7 +84,7 @@ if submit_btn and stock_input:
         used_symbol = ""
 
         with st.spinner(
-            f"正在鎖定台股代號 {stock_digits} 抓取歷史數據、計算 RSI 並聯網獲取最新 10 則新聞..."
+            f"正在鎖定台股代號 {stock_digits} 抓取歷史數據、計算極端 RSI 並聯網獲取最新 10+ 則新聞..."
         ):
             try:
                 for sym in symbols_to_try:
@@ -201,7 +204,7 @@ if submit_btn and stock_input:
                     st.markdown("#### 📋 犀利媽 20 年極端心法檢視報告：")
                     st.markdown(f"1. **【心法 1】極端值過濾**：{market_state}")
                     st.markdown(f"2. **【心法 2】持股精品化**：專注主流焦點股。當前量能狀態：{'🔥 具備人氣與成交量' if is_volume_up else '❄️ 成交量偏冷，建議觀望'}")
-                    st.markdown(f"3. **【心法 3】消息與籌碼對照**：對照最下方新聞與展望，技術指標需配合基本面題材！）")
+                    st.markdown(f"3. **【心法 3】消息與籌碼對照**：請對照下方即時新聞與重大消息，技術指標需配合基本面題材驗證！")
                     st.markdown(
                         f"4. **【心法 4】鐵血停損紀律**：\n"
                         f"   - **燈號判定**：{light}（評分：{score}/100）\n"
