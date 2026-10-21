@@ -17,7 +17,7 @@ with col_img:
         st.image(image_path, width=110)
 
 with col_header:
-    st.markdown("**開發者：尼克范 2026.10.21.V12（犀利媽心法 + Google AI 自動點評終極版）**")
+    st.markdown("**開發者：尼克范 2026.10.21.V13（語法完全修復終極版）**")
     st.title("📈 犀利媽 20年極端心法與即時新聞動態分析工具")
 
 st.write("本工具**支援全台灣上市櫃股票**。請輸入台股代號（例如：2330、6239、3231、2317）：")
@@ -25,7 +25,7 @@ st.write(
     "💡 **犀利媽 20年核心哲學**：「常態區間不看雜訊、極端行情絕不手軟、對照消息面靈活操作、破支撐手刀停損！」"
 )
 
-# 自動背景讀取 API Key (優先讀取 Secrets，完全不顯示側邊欄)
+# 自動背景讀取 API Key (隱藏側邊欄)
 gemini_api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY", "")
 
 stock_name_dict = {
@@ -255,4 +255,34 @@ if submit_btn and stock_input:
                                 f"⏱️ *發布時間：{item['date']}* | 🏢 *來源：{item['source']}*"
                             )
                             st.markdown("---")
-                            news_summary_
+                            news_summary_for_ai += f"{idx}. {item['title']}\n"
+                    else:
+                        st.info("尚無查獲近期相關新聞，請至公開資訊觀測站參閱該股公告。")
+                        news_summary_for_ai = "無近期顯著新聞"
+
+                    # =======================================================
+                    # 🤖 Google Gemini AI 犀利媽雙軌深度點評
+                    # =======================================================
+                    if gemini_api_key:
+                        st.markdown("---")
+                        st.subheader("🤖 Google AI 犀利媽雙軌綜合點評")
+                        with st.spinner("🤖 Google Gemini 正結合犀利媽 20 年心法與即時新聞進行深度研判..."):
+                            try:
+                                client = genai.Client(api_key=gemini_api_key)
+                                prompt = f"""
+你現在是台股知名實戰操盤專家「股市犀利媽（周亞瓊）」。請完全秉持你 20 年的交易哲學（常態區間30~70不看雜訊、專抓RSI<10或>90極端值、開精品店重質不重量、消息面與籌碼對照驗證、當斷則斷手刀停損），針對以下客觀數據與新聞進行精鍊、爽快且富有實戰價值的講評：
+
+【股票資訊】
+* 股票名稱與代號：{comp_name} ({used_symbol})
+* 最新收盤價：{latest_close:.2f} 元 (最高: {latest_high:.2f}, 最低: {latest_low:.2f})
+* 5日 RSI: {latest_rsi_5:.2f} | 10日 RSI: {latest_rsi_10:.2f}
+* 量能狀況：{'當日帶量大於5日均量' if is_volume_up else '量能偏冷低於5日均量'}
+* 技術面判定：{market_state} | 燈號：{light} ({score}分)
+
+【近期最新新聞摘要】
+{news_summary_for_ai}
+
+【講評要求】
+1. 以第一人稱口吻（如「我是犀利媽...」），用直白、實戰風格給予診斷。
+2. 結合目前的 RSI 位階與最新新聞，明確說明「該買、該賣、該等，還是該停損」。
+3. 字數約 200~300 字，著重於紀律與資金流
