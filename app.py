@@ -17,7 +17,7 @@ with col_img:
         st.image(image_path, width=110)
 
 with col_header:
-    st.markdown("**開發者：尼克范 2026.10.21.V14（函式與語法完全精準修正版）**")
+    st.markdown("**開發者：尼克范 2026.10.21.V15（升級 Gemini 3.8-Flash 完美運作版）**")
     st.title("📈 犀利媽 20年極端心法與即時新聞動態分析工具")
 
 st.write("本工具**支援全台灣上市櫃股票**。請輸入台股代號（例如：2330、6239、3231、2317）：")
@@ -274,35 +274,4 @@ if submit_btn and stock_input:
                                     f"你現在是台股知名實戰操盤專家「股市犀利媽（周亞瓊）」。請完全秉持你 20 年的交易哲學（常態區間30~70不看雜訊、專抓RSI<10或>90極端值、開精品店重質不重量、消息面與籌碼對照驗證、當斷則斷手刀停損），針對以下客觀數據與新聞進行精鍊、爽快且富有實戰價值的講評：\n\n"
                                     f"【股票資訊】\n"
                                     f"* 股票名稱與代號：{comp_name} ({used_symbol})\n"
-                                    f"* 最新收盤價：{latest_close:.2f} 元 (最高: {latest_high:.2f}, 最低: {latest_low:.2f})\n"
-                                    f"* 5日 RSI: {latest_rsi_5:.2f} | 10日 RSI: {latest_rsi_10:.2f}\n"
-                                    f"* 量能狀況：{vol_desc}\n"
-                                    f"* 技術面判定：{market_state} | 燈號：{light} ({score}分)\n\n"
-                                    f"【近期最新新聞摘要】\n"
-                                    f"{news_summary_for_ai}\n\n"
-                                    f"【講評要求】\n"
-                                    f"1. 以第一人稱口吻（如「我是犀利媽...」），用直白、實戰風格給予診斷。\n"
-                                    f"2. 結合目前的 RSI 位階與最新新聞，明確說明「該買、該賣、該等，還是該停損」。\n"
-                                    f"3. 字數約 200~300 字，著重於紀律與資金流動性。"
-                                )
-
-                                response = client.models.generate_content(
-                                    model="gemini-2.5-flash",
-                                    contents=prompt_text,
-                                )
-                                st.info(f"💡 **犀利媽 AI 實戰點評：**\n\n{response.text}")
-                            except Exception as ai_err:
-                                st.error(f"Google AI 點評呼叫失敗：{ai_err}")
-
-            except Exception as e:
-                st.error(f"讀取台股資料時發生錯誤：{e}")
-
-# 頁面最下方心法備註說明
-st.markdown("---")
-with st.expander("📖 點擊展開：犀利媽 20 年極端操盤四大鐵則"):
-    st.markdown("""
-    1. **只抓極端值**：平時常態區間（30~70）的指標雜訊完全無視；唯有極端過熱（>90）或極端超跌（<10）才動作。
-    2. **開精品店不開雜貨店**：持股精簡至 2~3 檔主流焦點股，不碰無量冷門股與低價水餃股。
-    3. **消息與極端指標雙軌驗證**：主動解讀財經資訊，反向利用群體恐慌或過度樂觀。
-    4. **絕不凹單、手刀停損**：方向不對立刻砍單，確保資金流動性與冷靜的思考能力。
-    """)
+                                    f"* 最新收盤價：
