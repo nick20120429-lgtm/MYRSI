@@ -1,9 +1,11 @@
 import os
 import urllib.parse
 import pandas as pd
+import requests
 import streamlit as st
 import yfinance as yf
 import feedparser
+from bs4 import BeautifulSoup
 from google import genai
 
 st.set_page_config(page_title="犀利媽 20年極端心法分析工具", page_icon="📈", layout="wide")
@@ -17,10 +19,10 @@ with col_img:
         st.image(image_path, width=110)
 
 with col_header:
-    st.markdown("**開發者：尼克范 2026.10.21.V18（括號完全修正版）**")
-    st.title("📈 犀利媽 20年極端心法與即時新聞動態分析工具")
+    st.markdown("**開發者：尼克范 2026.10.29.V19（MOPS公開資訊觀測站整合版）**")
+    st.title("📈 犀利媽 20年極端心法與即時新聞/MOPS觀測站動態分析工具")
 
-st.write("本工具**支援全台灣上市櫃股票**。請輸入台股代號（例如：2330、6239、3231、2317）：")
+st.write("本工具**支援全台灣上市櫃股票**。請輸入台股代號（例如：2330、6239、3231、2317、5347）：")
 st.write(
     "💡 **犀利媽 20年核心哲學**：「常態區間不看雜訊、極端行情絕不手軟、對照消息面靈活操作、破支撐手刀停損！」"
 )
@@ -39,6 +41,8 @@ stock_name_dict = {
     "2308": "台達電",
     "2382": "廣達",
     "3037": "欣興",
+    "3312": "弘憶股",
+    "6147": "頎邦",
 }
 
 def calculate_rsi(data, window=14):
@@ -61,7 +65,6 @@ def fetch_stock_news(stock_code, stock_name, count=10):
     
     if feed.entries:
         for entry in feed.entries[:count]:
-            # 這裡已將結尾的方括號修正為正確的圓括號
             pub_date = getattr(entry, "published", "")[:16] if hasattr(entry, "published") else ""
             news_items.append({
                 "title": entry.title,
@@ -70,6 +73,49 @@ def fetch_stock_news(stock_code, stock_name, count=10):
                 "source": entry.source.title if hasattr(entry, "source") else "財經新聞"
             })
     return news_items
+
+def fetch_mops_announcements(stock_code, count=5):
+    """
+    自公開資訊觀測站 (MOPS) 抓取近期重大訊息
+    """
+    url = "https://mops.twse.com.tw/mops/web/ajax_t05st01"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+    }
+    payload = {
+        "encodeMappingURL": "1",
+        "step": "1",
+        "firstin": "1",
+        "off": "1",
+        "queryName": "co_id",
+        "incorp": "",
+        "typek": "all",
+        "co_id": stock_code
+    }
+    announcements = []
+    try:
+        res = requests.post(url, data=payload, headers=headers, timeout=6)
+        res.encoding = 'utf-8'
+        soup = BeautifulSoup(res.text, 'html.parser')
+        
+        table = soup.find('table', {'class': 'hasBorder'})
+        if table:
+            rows = table.find_all('tr')[1:] # 略過表頭
+            for row in rows[:count]:
+                cols = row.find_all('td')
+                if len(cols) >= 5:
+                    date_str = cols[1].text.strip()
+                    time_str = cols[2].text.strip()
+                    subject = cols[4].text.strip()
+                    if subject:
+                        announcements.append({
+                            "date": f"{date_str} {time_str}",
+                            "subject": subject
+                        })
+    except Exception as e:
+        pass
+    return announcements
+
 
 col_input, col_btn = st.columns([3, 1])
 
@@ -94,7 +140,7 @@ if submit_btn and stock_input:
         used_symbol = ""
 
         with st.spinner(
-            f"正在鎖定台股代號 {stock_digits} 抓取歷史數據，依據犀利媽心法計算 RSI 並動態聯網獲取新聞..."
+            f"正在鎖定台股代號 {stock_digits} 抓取歷史數據，同步對接 MOPS 公開資訊觀測站與 Google RSS 新聞..."
         ):
             try:
                 for sym in symbols_to_try:
@@ -213,7 +259,7 @@ if submit_btn and stock_input:
                     st.markdown("#### 📋 犀利媽 20 年極端心法檢視報告：")
                     st.markdown("1. **【心法 1】極端值過濾**：" + market_state)
                     st.markdown("2. **【心法 2】持股精品化**：當前量能狀態為 **" + vol_text + "**。")
-                    st.markdown("3. **【心法 3】消息與籌碼對照**：請對照下方 10 則最新即時新聞，確認基本面有無重大變動。")
+                    st.markdown("3. **【心法 3】消息與籌碼對照**：對照 MOPS 官方重大公告與新聞，確認有無財報暴雷、庫藏股或法說會消息。")
                     st.markdown(
                         "4. **【心法 4】鐵血停損紀律**：\n"
                         + "   - **燈號判定**：" + light + "（評分：" + str(score) + "/100）\n"
@@ -240,51 +286,67 @@ if submit_btn and stock_input:
                     ).tail(60)
                     st.line_chart(rsi_chart_df)
 
-                    # 動態抓取最新 10 則新聞
+                    # 抓取 MOPS 與 RSS 新聞
                     st.markdown("---")
-                    st.subheader("📰【" + comp_name + " (" + stock_digits + ")】最新即時新聞與重大消息（動態抓取 10 則）")
+                    col_mops, col_news = st.columns(2)
                     
-                    fetched_news = fetch_stock_news(stock_digits, comp_name, count=10)
+                    mops_summary_for_ai = ""
+                    with col_mops:
+                        st.subheader("🏛️ 公開資訊觀測站 (MOPS) 即時重大訊息")
+                        mops_list = fetch_mops_announcements(stock_digits, count=5)
+                        if mops_list:
+                            for idx, item in enumerate(mops_list, 1):
+                                st.markdown(f"**{idx}. {item['subject']}**")
+                                st.caption(f"⏱️ 時間：{item['date']}")
+                                st.markdown("---")
+                                mops_summary_for_ai += f"{idx}. [{item['date']}] {item['subject']}\n"
+                        else:
+                            st.info("近期無顯著 MOPS 重大訊息公告或連線保護中。")
+                            mops_summary_for_ai = "近期無顯著 MOPS 官方重大公告"
 
                     news_summary_for_ai = ""
-                    if fetched_news:
-                        for idx, item in enumerate(fetched_news, 1):
-                            st.markdown(
-                                "**" + str(idx) + ". [" + item['title'] + "](" + item['link'] + ")**  \n"
-                                + "⏱️ *發布時間：" + item['date'] + "* | 🏢 *來源：" + item['source'] + "*"
-                            )
-                            st.markdown("---")
-                            news_summary_for_ai += str(idx) + ". " + item['title'] + "\n"
-                    else:
-                        st.info("尚無查獲近期相關新聞，請至公開資訊觀測站參閱該股公告。")
-                        news_summary_for_ai = "無近期顯著新聞"
+                    with col_news:
+                        st.subheader("📰【" + comp_name + " (" + stock_digits + ")】即時新聞")
+                        fetched_news = fetch_stock_news(stock_digits, comp_name, count=5)
+                        if fetched_news:
+                            for idx, item in enumerate(fetched_news, 1):
+                                st.markdown(f"**{idx}. [{item['title']}]({item['link']})**")
+                                st.caption(f"⏱️ 時間：{item['date']} | 🏢 來源：{item['source']}")
+                                st.markdown("---")
+                                news_summary_for_ai += f"{idx}. {item['title']}\n"
+                        else:
+                            st.info("尚無查獲近期相關新聞。")
+                            news_summary_for_ai = "無近期顯著新聞"
 
                     # =======================================================
-                    # 🤖 Google Gemini AI 犀利媽雙軌深度點評
+                    # 🤖 Google Gemini AI 犀利媽三軌深度點評
                     # =======================================================
                     if gemini_api_key:
                         st.markdown("---")
-                        st.subheader("🤖 Google AI 犀利媽雙軌綜合點評")
-                        with st.spinner("🤖 Google Gemini 正結合犀利媽 20 年心法與即時新聞進行深度研判..."):
+                        st.subheader("🤖 Google AI 犀利媽三軌綜合點評 (RSI x MOPS x 新聞)")
+                        with st.spinner("🤖 Google Gemini 正融合 RSI 技術面、MOPS 官方公告與即時新聞進行深度研判..."):
                             try:
                                 client = genai.Client(api_key=gemini_api_key)
                                 
                                 vol_desc = "當日帶量大於5日均量" if is_volume_up else "量能偏冷低於5日均量"
                                 
                                 prompt_text = (
-                                    "你現在是台股知名實戰操盤專家「股市犀利媽（周亞瓊）」。請完全秉持你 20 年的交易哲學（常態區間30~70不看雜訊、專抓RSI<10或>90極端值、開精品店重質不重量、消息面與籌碼對照驗證、當斷則斷手刀停損），針對以下客觀數據與新聞進行精鍊、爽快且富有實戰價值的講評：\n\n"
+                                    "你現在是台股知名實戰操盤專家「股市犀利媽（周亞瓊）」。請完全秉持你 20 年的交易哲學（常態區間30~70不看雜訊、專抓RSI<10或>90極端值、開精品店重質不重量、消息面與籌碼對照驗證、當斷則斷手刀停損），針對以下技術數據、MOPS官方公告與市場新聞進行精鍊、爽快且富有實戰價值的講評：\n\n"
                                     "【股票資訊】\n"
                                     f"* 股票名稱與代號：{comp_name} ({used_symbol})\n"
                                     f"* 最新收盤價：{latest_close:.2f} 元 (最高: {latest_high:.2f}, 最低: {latest_low:.2f})\n"
                                     f"* 5日 RSI: {latest_rsi_5:.2f} | 10日 RSI: {latest_rsi_10:.2f}\n"
                                     f"* 量能狀況：{vol_desc}\n"
                                     f"* 技術面判定：{market_state} | 燈號：{light} ({score}分)\n\n"
-                                    "【近期最新新聞摘要】\n"
+                                    "【公開資訊觀測站 (MOPS) 重大公告】\n"
+                                    f"{mops_summary_for_ai}\n\n"
+                                    "【近期市場新聞摘要】\n"
                                     f"{news_summary_for_ai}\n\n"
                                     "【講評要求】\n"
                                     "1. 以第一人稱口吻（如“我是犀利媽...”），用直白、實戰風格給予診斷。\n"
-                                    "2. 結合目前的 RSI 位階與最新新聞，明確說明“該買、該賣、該等，還是該停損”。\n"
-                                    "3. 字數約 200~300 字，著重於紀律與資金流動性。"
+                                    "2. 結合目前的 RSI 位階、MOPS 重大公告與新聞，明確說明“該買、該賣、該等，還是該手刀停損”。\n"
+                                    "3. 特別注意 MOPS 的公告內容（如財報、庫藏股、股利或增減資）是否與技術面產生背離或支撐。\n"
+                                    "4. 字數約 250~350 字，著重於紀律、基本面對照與資金流動性。"
                                 )
 
                                 response = client.models.generate_content(
@@ -304,6 +366,6 @@ with st.expander("📖 點擊展開：犀利媽 20 年極端操盤四大鐵則")
     st.markdown("""
     1. **只抓極端值**：平時常態區間（30~70）的指標雜訊完全無視；唯有極端過熱（>90）或極端超跌（<10）才動作。
     2. **開精品店不開雜貨店**：持股精簡至 2~3 檔主流焦點股，不碰無量冷門股與低價水餃股。
-    3. **消息與極端指標雙軌驗證**：主動解讀財經資訊，反向利用群體恐慌或過度樂觀。
+    3. **消息與極端指標雙軌驗證**：主動解讀財經資訊與 MOPS 官方公告，反向利用群體恐慌或過度樂觀。
     4. **絕不凹單、手刀停損**：方向不對立刻砍單，確保資金流動性與冷靜的思考能力。
     """)
